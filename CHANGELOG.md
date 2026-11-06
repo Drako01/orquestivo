@@ -1,8 +1,9 @@
 # Changelog
 
-## [0.1.0] - Unreleased
+## [0.1.0] — Unreleased
 
-- Initial private MVP foundation: GitHub Actions YAML static analysis, diagnostics and Control Center.
-- Spanish/English UI localization.
-- Branded Activity Bar icon and release governance.
-- **Not published.** GitHub Actions and other providers are planned for later stages.
+- Private first foundation: Orquestivo brand, Activity Bar icon and CI/CD Control Center.
+- Strict TypeScript GitHub Actions YAML static analysis and tests.
+- VS Code-native diagnostic tree and Problems integration.
+- English/Spanish UI baseline, security/privacy/release documents.
+- **Not published.**
