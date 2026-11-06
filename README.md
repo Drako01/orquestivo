@@ -17,6 +17,7 @@
 <p align="center">
   <a href="#quick-start">Quick start</a> ·
   <a href="#what-it-does-today">Features</a> ·
+  <a href="#screenshots">Screenshots</a> ·
   <a href="#limitations-and-trust-model">Limitations</a> ·
   <a href="#development-and-verification">Development</a> ·
   <a href="#contributing">Contributing</a>
@@ -44,6 +45,46 @@ A pipeline can be valid YAML and still be **unsafe, fragile or incorrect for its
 | Localize | English and Spanish UI shell; full rule-message localization is still in progress |
 
 Diagnostics identify supported static patterns. A clean scan **does not mean** a workflow has run, is secure in every context or will deploy successfully.
+
+## Screenshots
+
+A look at the current Orquestivo 0.1.0 preview inside Visual Studio Code. Click any image to open it at full resolution.
+
+### 1. Control Center — scan overview
+
+The Control Center summarizes analyzed workflow files, errors, warnings and informational findings. It also lists rule identifiers and source locations for investigation.
+
+<p align="center">
+  <a href="media/01.png">
+    <img src="media/01.png" alt="Orquestivo Control Center in VS Code showing one analyzed workflow, one error, two warnings, one informational finding and detailed diagnostics." width="940" />
+  </a>
+</p>
+<p align="center"><sub>Control Center · Resumen de análisis y hallazgos</sub></p>
+
+### 2. Workflow diagnostics — review findings in context
+
+Open the workflow YAML and inspect issues alongside the native **Problems** panel. Orquestivo findings can coexist with diagnostics from other installed GitHub Actions or YAML extensions.
+
+<p align="center">
+  <a href="media/02.png">
+    <img src="media/02.png" alt="VS Code YAML editor and Problems panel showing Orquestivo findings for broad permissions, unknown job dependencies, unpinned actions and missing timeout, alongside other validation diagnostics." width="940" />
+  </a>
+</p>
+<p align="center"><sub>Diagnostics · Errores y advertencias contextualizados en el editor</sub></p>
+
+### 3. CI generator — choose your project stack
+
+Use **Orquestivo: Generate safe CI workflow** to select a Node.js/npm, Go, Python/pytest or Java/Maven starter. Orquestivo previews the YAML and asks for confirmation before creating the workflow.
+
+<p align="center">
+  <a href="media/03.png">
+    <img src="media/03.png" alt="Orquestivo CI generator Quick Pick in VS Code offering Node.js npm, Go, Python and Java Maven templates." width="940" />
+  </a>
+</p>
+<p align="center"><sub>CI generator · Selección del stack del proyecto</sub></p>
+
+> These images document the **static-analysis and starter-generation preview**. They do not demonstrate execution, deployment or verification of a pipeline's intended outcome.
+
 
 ## Quick start
 
