@@ -17,6 +17,21 @@ exports.run = async function run() {
     assert.ok(commands.includes(id), 'Missing command: ' + id);
   }
 
+  // Simulate selecting the Activity Bar icon, not the separate Home command.
+  // A single view switch must open the Control Center editor tab.
+  await vscode.commands.executeCommand('workbench.view.explorer');
+  await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+  await vscode.commands.executeCommand('workbench.view.extension.orquestivo');
+
+  const controlCenterOpen = () => vscode.window.tabGroups.all.some(
+    group => group.tabs.some(tab => tab.label === 'Orquestivo · CI/CD Workflow Studio'),
+  );
+  for (let i = 0; i < 100 && !controlCenterOpen(); i++) {
+    await new Promise(resolve => setTimeout(resolve, 50));
+  }
+  assert.equal(controlCenterOpen(), true,
+    'Clicking Orquestivo in the Activity Bar must open Control Center without another command');
+
   // Reproduce generator creation: VS Code displays valid, unsaved YAML while
   // the corresponding on-disk file is still empty.
   const { join } = require('node:path');
