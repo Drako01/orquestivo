@@ -1,6 +1,14 @@
-<p align="center"><img src="media/readme-logo.webp" width="260" height="260" alt="Official Orquestivo logo: infinity, code, build, deploy, verification, wordmark and CI/CD Workflow Studio"></p>
-<h1 align="center">Orquestivo</h1>
-<p align="center"><strong>CI/CD Workflow Studio for Visual Studio Code</strong><br><em>Design the pipeline. Verify the outcome.</em></p>
+<p align="center">
+  <img src="media/brand-approved-full.png" alt="Orquestivo — CI/CD Workflow Studio" width="320" />
+</p>
+
+
+
+<p align="center">
+  <strong>CI/CD Workflow Studio for Visual Studio Code</strong><br />
+  <em>Design the pipeline. Verify the outcome.</em>
+</p>
+
 
 <p align="center"><img alt="MIT" src="https://img.shields.io/badge/license-MIT-7C8CF8"> <img alt="Unreleased preview" src="https://img.shields.io/badge/status-unreleased%20preview-14181D"> <img alt="VS Code ≥1.99" src="https://img.shields.io/badge/VS_Code-%E2%89%A51.99-14181D"></p>
 
