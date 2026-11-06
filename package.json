@@ -169,9 +169,17 @@
     "build:generator": "esbuild src/core/generator.ts --bundle --platform=node --format=cjs --target=node22 --outfile=dist/generator.cjs",
     "test:integration": "node test/integration/run.mjs",
     "lint": "eslint src --max-warnings=0",
-    "test:coverage": "node scripts/build-tests.mjs && node --experimental-test-coverage --test test/**/*.test.cjs test/*.test.cjs",
+    "test:coverage": "node scripts/coverage.mjs",
     "rulesets:check": "node scripts/rulesets.mjs --check",
-    "rulesets:status": "node scripts/rulesets.mjs --status"
+    "rulesets:status": "node scripts/rulesets.mjs --status",
+    "verify:fast": "node scripts/verify-enterprise.mjs --profile fast",
+    "verify:platform": "node scripts/verify-enterprise.mjs --profile platform",
+    "verify:enterprise": "node scripts/verify-enterprise.mjs --profile enterprise",
+    "verify:release": "node scripts/verify-enterprise.mjs --profile enterprise --no-cache --strict",
+    "mutation": "node scripts/mutation/run.mjs",
+    "sbom": "node scripts/sbom.mjs",
+    "audit:licenses": "node scripts/license-audit.mjs",
+    "audit:vsix": "node scripts/vsix-audit.mjs"
   },
   "dependencies": {
     "yaml": "2.9.1"

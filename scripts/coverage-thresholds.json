@@ -1,0 +1,7 @@
+{
+  "comment": "Per-module-group floors measured on original src/*.ts (see scripts/coverage.mjs). Groups with no measured files report WARN (no data) rather than PASS. Raise floors as coverage improves; never lower them without a documented reason in ENTERPRISE_AAAA_STATUS.md.",
+  "groups": [
+    { "name": "core-critical", "pattern": "src/core/{analyzer,generator}.ts", "lines": 85, "branches": 75 },
+    { "name": "core-other", "pattern": "src/core/*.ts", "lines": 60 }
+  ]
+}

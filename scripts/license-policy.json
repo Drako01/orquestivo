@@ -1,0 +1,5 @@
+{
+  "comment": "SPDX identifiers allowed for production dependencies. Anything else fails; missing license metadata is INCONCLUSIVE.",
+  "allow": ["MIT", "ISC", "BSD-2-Clause", "BSD-3-Clause", "Apache-2.0", "0BSD", "BlueOak-1.0.0", "CC0-1.0", "Python-2.0", "Unlicense"],
+  "exceptions": {}
+}
