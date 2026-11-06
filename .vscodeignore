@@ -9,3 +9,5 @@ tsconfig.json
 .gitignore
 .vscodeignore
 CHANGELOG-DRAFT.md
+
+/test_script.ps1
