@@ -1,66 +1,144 @@
 <p align="center">
-  <img src="media/brand-approved-full.webp" alt="Orquestivo — CI/CD Workflow Studio" width="320" />
+  <img src="media/brand-approved-full.webp" alt="Orquestivo — CI/CD Workflow Studio" width="360" />
 </p>
-
-
 
 <p align="center">
-  <strong>CI/CD Workflow Studio for Visual Studio Code</strong><br />
-  <em>Design the pipeline. Verify the outcome.</em>
+  <strong>Design the pipeline. Verify the outcome.</strong><br />
+  GitHub Actions workflow analysis and safe CI scaffolding inside Visual Studio Code.
 </p>
 
+<p align="center">
+  <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-7C8CF8">
+  <img alt="Status: unreleased preview" src="https://img.shields.io/badge/status-unreleased%20preview-14181D">
+  <img alt="Visual Studio Code 1.99+" src="https://img.shields.io/badge/VS_Code-1.99%2B-14181D">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178C6">
+</p>
 
-<p align="center"><img alt="MIT" src="https://img.shields.io/badge/license-MIT-7C8CF8"> <img alt="Unreleased preview" src="https://img.shields.io/badge/status-unreleased%20preview-14181D"> <img alt="VS Code ≥1.99" src="https://img.shields.io/badge/VS_Code-%E2%89%A51.99-14181D"></p>
+<p align="center">
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#what-it-does-today">Features</a> ·
+  <a href="#limitations-and-trust-model">Limitations</a> ·
+  <a href="#development-and-verification">Development</a> ·
+  <a href="#contributing">Contributing</a>
+</p>
 
 ---
 
-## Build pipelines that do what you intend
+## Why Orquestivo?
 
-YAML may be syntactically valid without delivering a correct or secure CI/CD outcome. **Orquestivo** is designed to bridge the gap between workflow configuration, developer intention and verification.
+A pipeline can be valid YAML and still be **unsafe, fragile or incorrect for its intended purpose**. Orquestivo is an open-source, local-first VS Code extension that helps you inspect GitHub Actions workflows and generate conservative CI starting points.
 
-> **Public development repository, unreleased extension.** The current scope is a partial GitHub Actions static analyzer plus conservative CI generation. Runtime execution, deployment verification, AI assistance and multi-provider support are **not implemented**. A clean static result is not proof of a successful CI run.
+**Current status: v0.1.0 foundation, not yet published.** Orquestivo currently performs **static checks**, not pipeline execution, deployment verification, or proof that a workflow meets business requirements. The long-term vision is larger; features not implemented are listed explicitly below.
 
-## Available in the foundation
+## What it does today
 
-| Capability | Scope |
+| Area | Current capability |
 | --- | --- |
-| Workflow discovery | `.github/workflows/*.yml` and `*.yaml` |
-| Static YAML validation | Parse errors and duplicate-key handling |
-| Job dependencies | Unknown jobs, self-dependencies and cycles |
-| Structure | Missing events, runners and steps |
-| Security observations | Broad permissions, mutable action versions and privileged PR triggers |
-| Reliability | Missing job timeouts |
-| Developer experience | Activity Bar, Problems diagnostics and Control Center |
-| CI generator | Starter workflows for Node.js/npm, Go, Python/pytest and Java/Maven, with review and explicit confirmation |
-| Evidence | Static analysis only; zero claims of remote execution |
-| Localization | English/Spanish UI shell; full rule localization pending |
-| Privacy | Local-first; no telemetry, execution or cloud submission |
-| Evidence | Static findings only; never claims that a pipeline executed |
+| Discover | Read `.github/workflows/*.yml` and `*.yaml` in a trusted workspace |
+| Validate | Parse YAML, report malformed documents and duplicate keys |
+| Understand jobs | Detect missing dependencies, self-dependencies and dependency cycles |
+| Flag risk | Warn about broad token permissions, mutable action references and privileged PR contexts |
+| Improve reliability | Detect selected structural issues and missing job timeouts |
+| Work natively | View findings in **Problems**, the **Activity Bar** and the **Control Center** |
+| Generate starters | Review CI templates for **Node.js/npm, Go, Python/pytest and Java/Maven** before creating files |
+| Localize | English and Spanish UI shell; full rule-message localization is still in progress |
 
-## Development
+Diagnostics identify supported static patterns. A clean scan **does not mean** a workflow has run, is secure in every context or will deploy successfully.
 
-Requires VS Code 1.99+, Node.js 22+ and a trusted local workspace.
+## Quick start
+
+### Try the development preview
+
+The extension is **not yet published** to the Visual Studio Marketplace or Open VSX. Build the VSIX locally, or use the preview VSIX artifact from a successful CI run on [PR #1](https://github.com/Drako01/orquestivo/pull/1).
+
+Prerequisites: **VS Code 1.99+**, **Node.js 22+** and npm. For analysis, open a **trusted** repository containing GitHub Actions workflow YAML files.
 
 ```bash
+git clone https://github.com/Drako01/orquestivo.git
+cd orquestivo
+git switch feat/mvp-foundation
 npm ci
-npm run verify
 npm run package
 ```
 
-Install the VSIX via **Extensions → Install from VSIX…** and run **Orquestivo: Analyze GitHub Actions workflows** or **Orquestivo: Generate safe CI workflow**. Templates are starting points; they do not deploy or prove success.
+In VS Code, select **Extensions → ··· → Install from VSIX…** and choose `orquestivo.vsix`. Open a trusted project and use the Command Palette:
 
-See [Ruleset governance](docs/RULESETS.md) and the [Enterprise AAAA release checklist](RELEASE_READINESS.md) for verified status and remaining work.
+1. **Orquestivo: Analyze GitHub Actions workflows** — scans supported workflow files and opens diagnostics.
+2. **Orquestivo: Generate safe CI workflow** — creates a reviewed starter template only after confirmation.
+3. Open the **Orquestivo** Activity Bar view to inspect the Control Center.
 
-## Product principles
+If you install a preview artifact from CI, verify its build and source commit. Avoid treating preview packages as production-certified releases.
 
-**Evidence before claims · Progressive disclosure for every seniority · Secure by default · Accessible by design · Strict TypeScript · SOLID, KISS, DRY, YAGNI · Independent quality gates.**
+## How to interpret findings
 
-See [Architecture](ARCHITECTURE.md), [Roadmap](ROADMAP.md), [Security](SECURITY.md), [Privacy](PRIVACY.md) and [Release process](docs/RELEASE.md).
+Findings belong to the **static-analysis** category. They may point to YAML structure, job dependencies, action pinning, permissions, or selected injection-prone expressions. Review the referenced source location and validate the proposed change in your own CI environment.
 
-## Support
+Orquestivo intentionally distinguishes:
 
-Submit reproducible problems through [ArmoTuSitio](https://armotusitio.com.ar/soporte/). Include sanitized workflow examples only. Do not share API keys, secret values or confidential CI logs.
+| Evidence | What it establishes |
+| --- | --- |
+| YAML parsed | Syntax was understood by the parser |
+| Static analysis completed | Supported rules were evaluated |
+| Actual CI run | Only a real runner can establish execution status |
+| Intended outcome verified | Requires explicit acceptance criteria and separate evidence |
+
+The final two levels are **not implemented in v0.1.0**.
+
+## Limitations and trust model
+
+- **GitHub Actions only.** No GitLab CI, Azure Pipelines or Jenkins support yet.
+- **Partial semantic coverage.** Expressions, event filters, matrices, conditions, artifacts and GitHub Actions schema are not exhaustively validated.
+- **No autonomous execution.** The analyzer does not invoke workflow commands or run deployment jobs.
+- **No GitHub sign-in or cloud service required.** The current extension reads local workflow files and keeps diagnostics in memory.
+- **No AI, runtime verification or guaranteed fixes.** These are roadmap items, not present-day capabilities.
+- **Workspace Trust matters.** Scans in the current MVP require a trusted workspace and bounded file reads.
+
+See [Security](SECURITY.md), [Privacy](PRIVACY.md), [Architecture](ARCHITECTURE.md), and the [Roadmap](ROADMAP.md).
+
+## Development and verification
+
+```bash
+npm ci
+npm run typecheck
+npm run lint
+npm run rulesets:check
+npm test
+npm run test:coverage
+npm run verify
+npm run test:integration
+npm run package
+npm audit --omit=dev --audit-level=high
+```
+
+`npm run verify` repeats typecheck, lint, ruleset validation, unit tests and production build. The VS Code integration test starts an Extension Host and may download a test copy of VS Code. A passing smoke test does not replace manual UX and accessibility validation.
+
+**Architecture:** `src/core/` contains the analyzer and generator; `src/extension.ts` connects these to VS Code; `test/` contains deterministic tests. Source files use strict TypeScript. See [ARCHITECTURE.md](ARCHITECTURE.md) for boundaries and security assumptions.
+
+## Quality, roadmap and release status
+
+This project targets **Enterprise AAAA engineering practices**, but this is an **objective, not a current certification**. Open release gates include complete behavioral coverage, source-based test coverage, expanded packaged E2E, accessibility, comprehensive EN/ES localization, threat modeling, and publishing verification.
+
+Review the evidence-backed [Release Readiness checklist](RELEASE_READINESS.md), [release process](docs/RELEASE.md), and [GitHub ruleset governance](docs/RULESETS.md). Publication is manual and requires maintainer approval.
+
+## Contributing
+
+**Contributions are welcome — ¡Se aceptan contribuciones!** Developers, DevOps engineers, QA specialists, translators, designers and accessibility reviewers can help improve Orquestivo.
+
+Start with [CONTRIBUTING.md](CONTRIBUTING.md) for environment setup, suitable first contributions, review requirements and PR acceptance criteria. Please also read the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+- [Open an issue](https://github.com/Drako01/orquestivo/issues) for a reproducible bug or a scoped enhancement.
+- [Review the roadmap](ROADMAP.md) to find unimplemented capabilities.
+- [Open a pull request](https://github.com/Drako01/orquestivo/pulls) against `main` once your branch and tests are ready. Do not commit secrets or private CI logs.
+
+## Support, security and license
+
+For functional issues, use [GitHub Issues](https://github.com/Drako01/orquestivo/issues) or [ArmoTuSitio support](https://armotusitio.com.ar/soporte/). **Report vulnerabilities privately**, following [SECURITY.md](SECURITY.md); do not open public issues containing exploit details, tokens or confidential workflow data.
+
+Distributed under the **MIT License**. See [LICENSE](LICENSE).
 
 ---
 
-<p align="center"><strong>Designed and developed by Alejandro Daniel Di Stefano</strong><br>© 2026 <a href="https://armotusitio.com.ar">ArmoTuSitio</a>. Copyright holder.<br>Released under the MIT License (included with the extension).</p>
+<p align="center">
+  <strong>Designed and developed by Alejandro Daniel Di Stefano</strong><br />
+  © 2026 <a href="https://armotusitio.com.ar">ArmoTuSitio</a> · Open source under the MIT License
+</p>

@@ -45,7 +45,7 @@ Last verified against the current repository sources on 2026-11-05 (Argentina lo
 - [x] No mandatory AI, telemetry, credentials or cloud backend
 - [x] Versioned `Protect main` / `Protect release tags` definitions and `CODEOWNERS`
 - [x] Ruleset drift checker and explicit administrative provisioner
-- [ ] **GitHub rulesets actually active** (currently absent from live API)
+- [x] **GitHub rulesets active**, both installed on 2026-11-05; complete authenticated API objects matched the versioned definitions (re-run authenticated drift check before release)
 - [ ] Verified repository environment protection and OIDC Trusted Publishing for Marketplace/Open VSX
 - [ ] Secret-safe opt-in authentication, remote access and log redaction
 - [ ] Formal security threat-model acceptance and supply-chain hardening

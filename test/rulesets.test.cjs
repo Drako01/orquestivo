@@ -50,3 +50,13 @@ test('offline policy validation does not need credentials or make remote changes
   });
   assert.match(out,/Ruleset definitions validated/);
 });
+
+test('remote ruleset verification refuses anonymous partial data rather than false drift', () => {
+  const { spawnSync } = require('node:child_process');
+  const { GH_TOKEN: ignoredToken, ...environment } = process.env;
+  const result = spawnSync(process.execPath,['scripts/rulesets.mjs','--status'],{
+    cwd:root,encoding:'utf8',env:environment,
+  });
+  assert.equal(result.status,1);
+  assert.match(result.stderr,/Cannot fully verify rulesets without GH_TOKEN/);
+});

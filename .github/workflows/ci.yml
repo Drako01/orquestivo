@@ -53,10 +53,10 @@ jobs:
           unzip -q orquestivo.vsix -d packaged
           test -s packaged/extension/dist/extension.js
           test -s packaged/extension/media/icon-128.png
-          test -s packaged/extension/media/readme-logo.webp
+          test -s packaged/extension/media/brand-approved-full.webp
           test -s packaged/extension/media/activity.svg
           test -f packaged/extension/package.nls.es.json
-          if unzip -Z1 orquestivo.vsix | grep -E '^extension/(src/|test/|node_modules/|\.env|\.git/)'; then
+          if unzip -Z1 orquestivo.vsix | grep -E '^extension/(src/|test/|node_modules/|\.env|\.git/|test_script\.ps1$|media/brand-approved-full\.png$|media/readme-logo\.webp$)'; then
             echo "::error::Source, test or sensitive files leaked into VSIX"
             exit 1
           fi

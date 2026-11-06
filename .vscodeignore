@@ -10,4 +10,6 @@ tsconfig.json
 .vscodeignore
 CHANGELOG-DRAFT.md
 
-/test_script.ps1
+test_script.ps1
+media/brand-approved-full.png
+media/readme-logo.webp

@@ -27,10 +27,14 @@ These definitions mirror the **actual active rulesets** read from `Drako01/proba
 ```bash
 npm ci
 npm run rulesets:check
-npm run rulesets:status
+npm run rulesets:status  # requires GH_TOKEN with ruleset administration permissions
 ```
 
-`rulesets:check` validates versioned definitions offline. `rulesets:status` compares with the live repository and returns a nonzero exit code until both are active and match.
+`rulesets:check` validates versioned definitions offline. `rulesets:status` requires `GH_TOKEN` and compares with the live repository; GitHub omits `bypass_actors` in anonymous responses, which previously caused a false DRIFT. The status checker fails closed when it cannot fully verify permissions.
+
+## Current status
+
+Both `Protect main` and `Protect release tags` were installed and activated on November 5, 2026. Their complete authenticated GitHub API configurations matched the versioned JSON definitions. Re-run `--status` with administrator credentials to check subsequent changes.
 
 ## Apply through an authorized local administrator session
 
@@ -38,7 +42,7 @@ Acquire a fine-grained GitHub token scoped **only** to `Drako01/orquestivo` with
 
 ```bash
 node scripts/rulesets.mjs --apply --confirm=Drako01/orquestivo
-npm run rulesets:status
+npm run rulesets:status  # keep GH_TOKEN set through this command
 ```
 
 The script creates missing rulesets, updates matching-name rulesets that drifted, never deletes other rulesets, and does not log token values. An explicit `--apply` and matching repository confirmation are required.

@@ -2,7 +2,7 @@
 /**
  * Orquestivo GitHub ruleset governance.
  * --check: offline checks only (default).
- * --status: read-only check against live GitHub.
+ * --status: read-only authenticated check against live GitHub. The ruleset API redacts bypass actors without write access.
  * --apply --confirm=Drako01/orquestivo: explicit maintainer action, requires GH_TOKEN with Administration: write.
  * Never writes tokens to disk or logs.
  */
@@ -124,7 +124,11 @@ async function main() {
     console.log('Ruleset definitions validated: Protect main and Protect release tags.');
     return;
   }
-  const token = mode === '--apply' ? process.env.GH_TOKEN : undefined;
+  // GitHub omits bypass_actors from anonymous/low-permission responses, yielding false DRIFT.
+  const token = mode === '--check' ? undefined : process.env.GH_TOKEN;
+  if (mode === '--status' && !token) {
+    throw new Error('Cannot fully verify rulesets without GH_TOKEN: GitHub hides bypass_actors from anonymous reads. Run with a token that can administer repository rulesets.');
+  }
   if (mode === '--apply' &&
       (args.length !== 2 || args[1] !== '--confirm=Drako01/orquestivo' || !token)) {
     throw new Error('Applying changes requires --confirm=Drako01/orquestivo and a GH_TOKEN with Administration: write.');
