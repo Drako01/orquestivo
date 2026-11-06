@@ -65,7 +65,7 @@ Diagnostics identify supported static patterns. A clean scan **does not mean** a
 
 ## Screenshots
 
-A look at the current Orquestivo 0.1.0 preview inside Visual Studio Code. Click any image to open it at full resolution.
+A look at Orquestivo. Images 1–3 are real VS Code captures from the earlier 0.1.0 preview; images 4–6 show the current Control Center, rendered from the product's own HTML (`src/ui`) with a real analysis of a sample workflow and a VS Code dark theme palette. They are not full VS Code window captures; regenerate them with `scripts/render-readme-media.mjs`. Click any image to open it at full resolution.
 
 ### 1. Control Center — scan overview
 
@@ -99,6 +99,39 @@ Use **Orquestivo: Generate safe CI workflow** to select a project stack. Orquest
   </a>
 </p>
 <p align="center"><sub>CI generator · Selección del stack del proyecto</sub></p>
+
+### 4. Control Center — summary, filters and explained findings
+
+Counts by severity, filters by severity and category, and each finding with why it matters, what to do, its rule, evidence state and documentation link. The *Advanced* experience level is shown; *Beginner* and *Expert* present the same data differently.
+
+<p align="center">
+  <a href="media/04-control-center-overview.png">
+    <img src="media/04-control-center-overview.png" alt="Orquestivo Control Center in dark theme with 1 pipeline file, 1 error, 8 warnings, 5 informational findings, severity and category filters and the first detailed findings." width="940" />
+  </a>
+</p>
+<p align="center"><sub>Control Center · Resumen, filtros y hallazgos explicados</sub></p>
+
+### 5. Pipeline diagram — jobs and dependencies
+
+An accessible diagram built from the `needs` graph: focusable nodes with their YAML line, and a text alternative for screen readers. It shows static structure only and never invents execution states.
+
+<p align="center">
+  <a href="media/05-pipeline-diagram.png">
+    <img src="media/05-pipeline-diagram.png" alt="Pipeline diagram with five jobs lint, test, build, scan and deploy connected in sequence, each labelled with its line in the workflow file." width="940" />
+  </a>
+</p>
+<p align="center"><sub>Diagrama · Jobs y dependencias, sin estados de ejecución inventados</sub></p>
+
+### 6. Intent and evidence — honest verdicts
+
+Declare what the pipeline must guarantee in `.orquestivo/intent.json`. Each criterion gets a verdict (PASS, FAIL, WARN, SKIP, INCONCLUSIVE, BLOCKED) and its basis. Only PASS counts as met, and static inference is never presented as proof that something ran.
+
+<p align="center">
+  <a href="media/06-intent-verdicts.png">
+    <img src="media/06-intent-verdicts.png" alt="Intent and evidence table showing PASS for run-tests and produce-artifacts, FAIL for security-scan-present, SKIP for publish-only-from-branch and INCONCLUSIVE for deploy approval, secret exposure and deploy confirmation." width="940" />
+  </a>
+</p>
+<p align="center"><sub>Intención y evidencia · Veredictos con su base de evidencia</sub></p>
 
 > These images were captured from the earlier 0.1.0 preview (static analysis and a four-stack generator). They predate the multi-provider Control Center, the wizard and the evidence features described above, and they do not demonstrate execution, deployment or verification of a pipeline's intended outcome. New screenshots will be added only after they are captured from the real UI.
 
