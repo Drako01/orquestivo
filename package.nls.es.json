@@ -6,5 +6,6 @@
   "walkthrough.title": "Primeros pasos con Orquestivo",
   "walkthrough.description": "Inspeccioná workflows de GitHub Actions antes de subir cambios.",
   "walkthrough.analyze.title": "Analizar workflows",
-  "walkthrough.analyze.description": "Abrí un espacio de trabajo confiable y ejecutá **Orquestivo: Analizar workflows de GitHub Actions**."
+  "walkthrough.analyze.description": "Abrí un espacio de trabajo confiable y ejecutá **Orquestivo: Analizar workflows de GitHub Actions**.",
+  "command.generate": "Generar workflow CI seguro"
 }

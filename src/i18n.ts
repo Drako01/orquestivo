@@ -14,7 +14,19 @@ const en = {
   info: 'Information',
   oversized: 'File exceeds the configured size limit; no analysis performed.',
   readError: 'Could not read the workflow file.',
-  analyzeProgress: 'Analyzing GitHub Actions workflows…'
+  analyzeProgress: 'Analyzing GitHub Actions workflows…',
+  noFolder: 'Open a project folder before generating a workflow.',
+  choosePreset: 'Choose your project stack',
+  chooseTrigger: 'Choose when CI should run',
+  triggerBoth: 'Push and pull requests',
+  triggerPR: 'Pull requests only',
+  missingMarker: 'Expected project file not found:',
+  continue: 'Continue',
+  generatorError: 'The proposed workflow did not pass static validation.',
+  alreadyExists: 'orquestivo-ci.yml already exists. Nothing was overwritten.',
+  writeError: 'Could not safely create the new workflow file.',
+  previewDisclaimer: 'Review the generated CI in the editor. It does not deploy software and its success has not been verified. Create this file?',
+  createFile: 'Create workflow'
 } as const;
 const es: Record<keyof typeof en, string> = {
   title: 'Estudio de workflows CI/CD',
@@ -32,7 +44,19 @@ const es: Record<keyof typeof en, string> = {
   info: 'Información',
   oversized: 'El archivo supera el límite configurado; no fue analizado.',
   readError: 'No se pudo leer el archivo del workflow.',
-  analyzeProgress: 'Analizando workflows de GitHub Actions…'
+  analyzeProgress: 'Analizando workflows de GitHub Actions…',
+  noFolder: 'Abrí una carpeta de proyecto antes de generar un workflow.',
+  choosePreset: 'Elegí el stack del proyecto',
+  chooseTrigger: 'Elegí cuándo ejecutar la integración continua',
+  triggerBoth: 'Push y pull requests',
+  triggerPR: 'Solo pull requests',
+  missingMarker: 'No se encontró el archivo esperado:',
+  continue: 'Continuar',
+  generatorError: 'El workflow propuesto no superó la validación estática.',
+  alreadyExists: 'Ya existe orquestivo-ci.yml. No se sobrescribió ningún archivo.',
+  writeError: 'No se pudo crear el workflow de forma segura.',
+  previewDisclaimer: 'Revisá el CI generado en el editor. No despliega software ni se verificó su ejecución. ¿Crear el archivo?',
+  createFile: 'Crear workflow'
 };
 export type TextKey = keyof typeof en;
 export function tr(key: TextKey, language: string): string {
