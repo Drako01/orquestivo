@@ -162,14 +162,16 @@
     "build:prod": "npm run build -- --minify",
     "typecheck": "tsc --noEmit",
     "test": "npm run build:analyzer && npm run build:generator && node --test test/*.test.cjs",
-    "verify": "npm run typecheck && npm run lint && npm run test && npm run build:prod",
+    "verify": "npm run typecheck && npm run lint && npm run rulesets:check && npm run test && npm run build:prod",
     "package": "npm run verify && vsce package --no-dependencies --out orquestivo.vsix",
     "vscode:prepublish": "npm run build:prod",
     "build:analyzer": "esbuild src/core/analyzer.ts --bundle --platform=node --format=cjs --target=node22 --outfile=dist/analyzer.cjs",
     "build:generator": "esbuild src/core/generator.ts --bundle --platform=node --format=cjs --target=node22 --outfile=dist/generator.cjs",
     "test:integration": "node test/integration/run.mjs",
     "lint": "eslint src --max-warnings=0",
-    "test:coverage": "npm run build:analyzer && npm run build:generator && node --experimental-test-coverage --test test/*.test.cjs"
+    "test:coverage": "npm run build:analyzer && npm run build:generator && node --experimental-test-coverage --test test/*.test.cjs",
+    "rulesets:check": "node scripts/rulesets.mjs --check",
+    "rulesets:status": "node scripts/rulesets.mjs --status"
   },
   "dependencies": {
     "yaml": "2.9.1"
