@@ -25,7 +25,7 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
-      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm run verify
       - name: Production dependency audit
         if: runner.os == 'Linux'
@@ -46,13 +46,14 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
-      - run: npm install --no-audit --no-fund
+      - run: npm ci --no-audit --no-fund
       - run: npm run package
       - name: Inspect packaged extension
         run: |
           unzip -q orquestivo.vsix -d packaged
           test -s packaged/extension/dist/extension.js
           test -s packaged/extension/media/icon-128.png
+          test -s packaged/extension/media/readme-logo.webp
           test -s packaged/extension/media/activity.svg
           test -f packaged/extension/package.nls.es.json
           if unzip -Z1 orquestivo.vsix | grep -E '^extension/(src/|test/|node_modules/|\.env|\.git/)'; then

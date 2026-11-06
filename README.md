@@ -1,8 +1,8 @@
-<p align="center"><img src="media/icon-128.png" width="128" alt="Orquestivo logo"></p>
+<p align="center"><img src="media/readme-logo.webp" width="260" height="260" alt="Official Orquestivo logo: infinity, code, build, deploy, verification, wordmark and CI/CD Workflow Studio"></p>
 <h1 align="center">Orquestivo</h1>
 <p align="center"><strong>CI/CD Workflow Studio for Visual Studio Code</strong><br><em>Design the pipeline. Verify the outcome.</em></p>
 
-<p align="center"><img alt="MIT" src="https://img.shields.io/badge/license-MIT-7C8CF8"> <img alt="Private MVP" src="https://img.shields.io/badge/status-private%20MVP-14181D"> <img alt="VS Code ≥1.99" src="https://img.shields.io/badge/VS_Code-%E2%89%A51.99-14181D"></p>
+<p align="center"><img alt="MIT" src="https://img.shields.io/badge/license-MIT-7C8CF8"> <img alt="Unreleased preview" src="https://img.shields.io/badge/status-unreleased%20preview-14181D"> <img alt="VS Code ≥1.99" src="https://img.shields.io/badge/VS_Code-%E2%89%A51.99-14181D"></p>
 
 ---
 
@@ -10,7 +10,7 @@
 
 YAML may be syntactically valid without delivering a correct or secure CI/CD outcome. **Orquestivo** is designed to bridge the gap between workflow configuration, developer intention and verification.
 
-> **Private foundation; not a public release.** This version contains a limited, read-only GitHub Actions analyzer with native diagnostics. Generation, execution, AI assistance and multiple CI providers are on the roadmap, **not implemented yet**.
+> **Public development repository, unreleased extension.** The current scope is a partial GitHub Actions static analyzer plus conservative CI generation. Runtime execution, deployment verification, AI assistance and multi-provider support are **not implemented**. A clean static result is not proof of a successful CI run.
 
 ## Available in the foundation
 
@@ -23,6 +23,8 @@ YAML may be syntactically valid without delivering a correct or secure CI/CD out
 | Security observations | Broad permissions, mutable action versions and privileged PR triggers |
 | Reliability | Missing job timeouts |
 | Developer experience | Activity Bar, Problems diagnostics and Control Center |
+| CI generator | Starter workflows for Node.js/npm, Go, Python/pytest and Java/Maven, with review and explicit confirmation |
+| Evidence | Static analysis only; zero claims of remote execution |
 | Localization | English/Spanish UI shell; full rule localization pending |
 | Privacy | Local-first; no telemetry, execution or cloud submission |
 | Evidence | Static findings only; never claims that a pipeline executed |
@@ -32,12 +34,14 @@ YAML may be syntactically valid without delivering a correct or secure CI/CD out
 Requires VS Code 1.99+, Node.js 22+ and a trusted local workspace.
 
 ```bash
-npm install
+npm ci
 npm run verify
 npm run package
 ```
 
-Install the VSIX via **Extensions → Install from VSIX…** and run **Orquestivo: Analyze GitHub Actions workflows**.
+Install the VSIX via **Extensions → Install from VSIX…** and run **Orquestivo: Analyze GitHub Actions workflows** or **Orquestivo: Generate safe CI workflow**. Templates are starting points; they do not deploy or prove success.
+
+See [Ruleset governance](docs/RULESETS.md) and the [Enterprise AAAA release checklist](RELEASE_READINESS.md) for verified status and remaining work.
 
 ## Product principles
 

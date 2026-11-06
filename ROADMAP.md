@@ -1,6 +1,6 @@
 # Orquestivo — Enterprise quality roadmap
 
-Private development. Items not checked are **not implemented**.
+Public source repository; extension is **not released**. Checked items mean implemented, not automatically certified for production.
 
 ## Foundation
 - [x] Identity and monochrome theme-adaptive Activity Bar icon
@@ -8,14 +8,18 @@ Private development. Items not checked are **not implemented**.
 - [x] Native diagnostics and read-only Control Center
 - [x] English/Spanish UI shell and first deterministic fixtures
 - [x] Manual-only release workflow prepared
-- [ ] Reproducible lockfile, CI with `npm ci` and precise dependency provenance
-- [ ] Packaged VSIX E2E in real VS Code
+- [x] Reproducible npm lockfile and `npm ci` in CI
+- [ ] Dependency provenance and SBOM acceptance
+- [x] Basic extracted-VSIX activation smoke in a real VS Code Extension Host on Linux
+- [ ] Expanded packaged VSIX E2E across all supported operating systems
 - [ ] Accessibility and full localization acceptance
 
 ## GitHub Actions MVP
 - [ ] Complete semantics for triggers, filters, contexts, expressions, matrices and permissions
-- [ ] Accurate source positions, severity, rule IDs, and explainable findings
-- [ ] Declarative workflow creation from explicit goals and acceptance requirements
+- [x] Initial source positions, severity and rule IDs for supported YAML constructs
+- [ ] Full schema/expression semantics, localization and precision corpus
+- [x] Basic CI templates for Node.js, Go, Python and Maven with preview/confirmation
+- [ ] Intent contracts, acceptance criteria and deployment-specific generation
 - [ ] Policy/baseline comparisons for introduced vs existing defects
 - [ ] Safe, previewable fixes and opt-in external validation
 - [ ] Representative precision/recall corpus and performance limits
@@ -31,3 +35,5 @@ Private development. Items not checked are **not implemented**.
 - [ ] Additional CI providers after GitHub Actions maturity
 
 Release gate: explicit owner approval, full test matrix, security review, accessibility, package contents, CI evidence and storefront confirmation.
+
+See [`RELEASE_READINESS.md`](RELEASE_READINESS.md) for the current evidence-backed checklist and [`docs/RULESETS.md`](docs/RULESETS.md) for governance activation.
