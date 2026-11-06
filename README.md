@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="media/brand-approved-full.png" alt="Orquestivo — CI/CD Workflow Studio" width="320" />
+  <img src="media/brand-approved-full.webp" alt="Orquestivo — CI/CD Workflow Studio" width="320" />
 </p>
 
 
