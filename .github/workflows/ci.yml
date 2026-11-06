@@ -70,6 +70,8 @@ jobs:
         run: npm run audit:vsix
       - name: Extract VSIX
         run: unzip -q orquestivo.vsix -d packaged
+      - name: Compile pure modules used by the integration suite
+        run: node scripts/build-tests.mjs
       - name: Test the extracted VSIX in real Visual Studio Code
         env:
           ORQUESTIVO_PACKAGE_DIR: ${{ github.workspace }}/packaged/extension
