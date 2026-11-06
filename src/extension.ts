@@ -195,9 +195,19 @@ export function activate(context: vscode.ExtensionContext): void {
     showHome();
   };
 
+  // The Activity Bar is the primary entry point: opening its diagnostics view
+  // must also reveal the Control Center in the editor, without a second click.
+  const treeView = vscode.window.createTreeView('orquestivo.overview', {
+    treeDataProvider: provider,
+  });
+  const openOnReveal = treeView.onDidChangeVisibility(({ visible }) => {
+    if (visible) showHome();
+  });
+
   context.subscriptions.push(
     diagnostics,
-    vscode.window.registerTreeDataProvider('orquestivo.overview', provider),
+    treeView,
+    openOnReveal,
     vscode.commands.registerCommand('orquestivo.openHome', showHome),
     vscode.commands.registerCommand('orquestivo.analyze', async () => { await scan(); showHome(); }),
     vscode.commands.registerCommand('orquestivo.generateCI', generate),
@@ -209,5 +219,8 @@ export function activate(context: vscode.ExtensionContext): void {
       editor.revealRange(new vscode.Range(position, position), vscode.TextEditorRevealType.InCenter);
     })
   );
+  // When the view was restored already visible during extension activation,
+  // onDidChangeVisibility may not fire; handle that state explicitly.
+  if (treeView.visible) showHome();
 }
 export function deactivate(): void {}

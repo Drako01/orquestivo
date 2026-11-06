@@ -65,7 +65,7 @@ In VS Code, select **Extensions → ··· → Install from VSIX…** and choose
 
 1. **Orquestivo: Analyze GitHub Actions workflows** — scans supported workflow files and opens diagnostics.
 2. **Orquestivo: Generate safe CI workflow** — creates a reviewed starter template only after confirmation.
-3. Open the **Orquestivo** Activity Bar view to inspect the Control Center.
+3. Click the **Orquestivo** Activity Bar icon to open the **Control Center** immediately. The sidebar retains the workflow diagnostics tree so you can navigate individual findings.
 
 If you install a preview artifact from CI, verify its build and source commit. Avoid treating preview packages as production-certified releases.
 
