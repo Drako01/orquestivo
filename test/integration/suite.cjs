@@ -13,6 +13,11 @@ exports.run = async function run() {
     'orquestivo.analyze',
     'orquestivo.generateCI',
     'orquestivo.openFinding',
+    'orquestivo.undoLastGeneration',
+    'orquestivo.connectGitHub',
+    'orquestivo.disconnectGitHub',
+    'orquestivo.fetchRuns',
+    'orquestivo.ai.explainFinding',
   ]) {
     assert.ok(commands.includes(id), 'Missing command: ' + id);
   }
@@ -23,8 +28,9 @@ exports.run = async function run() {
   await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
   await vscode.commands.executeCommand('workbench.view.extension.orquestivo');
 
+  // The tab title is localized, so identify the Control Center by its webview type.
   const controlCenterOpen = () => vscode.window.tabGroups.all.some(
-    group => group.tabs.some(tab => tab.label === 'Orquestivo · CI/CD Workflow Studio'),
+    group => group.tabs.some(tab => String(tab.input?.viewType ?? '').includes('orquestivo.home')),
   );
   for (let i = 0; i < 100 && !controlCenterOpen(); i++) {
     await new Promise(resolve => setTimeout(resolve, 50));
@@ -65,5 +71,11 @@ exports.run = async function run() {
   );
 
   await vscode.commands.executeCommand('orquestivo.openHome');
+  // Remote evidence and AI must be opt-in.
+  const config = vscode.workspace.getConfiguration('orquestivo');
+  assert.equal(config.get('remote.enabled'), false, 'Remote evidence must default to disabled');
+  assert.equal(config.get('ai.enabled'), false, 'AI must default to disabled');
+  assert.equal(config.get('ui.experienceLevel'), 'beginner');
+
   // No arbitrary file writes, subprocess execution or GitHub calls are required for activation.
 };

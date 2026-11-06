@@ -49,11 +49,11 @@
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": "limited",
-      "description": "Workflow analysis requires a trusted workspace."
+      "description": "%capabilities.untrusted%"
     },
     "virtualWorkspaces": {
       "supported": true,
-      "description": "Static workflow analysis works in virtual workspaces."
+      "description": "%capabilities.virtual%"
     }
   },
   "contributes": {
@@ -76,8 +76,33 @@
         "icon": "$(add)"
       },
       {
+        "command": "orquestivo.undoLastGeneration",
+        "title": "%command.undo%",
+        "category": "Orquestivo"
+      },
+      {
         "command": "orquestivo.openFinding",
         "title": "%command.openFinding%",
+        "category": "Orquestivo"
+      },
+      {
+        "command": "orquestivo.connectGitHub",
+        "title": "%command.connect%",
+        "category": "Orquestivo"
+      },
+      {
+        "command": "orquestivo.disconnectGitHub",
+        "title": "%command.disconnect%",
+        "category": "Orquestivo"
+      },
+      {
+        "command": "orquestivo.fetchRuns",
+        "title": "%command.fetchRuns%",
+        "category": "Orquestivo"
+      },
+      {
+        "command": "orquestivo.ai.explainFinding",
+        "title": "%command.explain%",
         "category": "Orquestivo"
       }
     ],
@@ -115,6 +140,12 @@
           "when": "view == orquestivo.overview && isWorkspaceTrusted",
           "group": "navigation@3"
         }
+      ],
+      "commandPalette": [
+        {
+          "command": "orquestivo.openFinding",
+          "when": "false"
+        }
       ]
     },
     "configuration": {
@@ -125,14 +156,41 @@
           "default": 150,
           "minimum": 1,
           "maximum": 1000,
-          "description": "Maximum number of workflow files per scan."
+          "description": "%config.maxFiles%"
         },
         "orquestivo.analysis.maxFileBytes": {
           "type": "integer",
           "default": 1048576,
           "minimum": 1024,
           "maximum": 10485760,
-          "description": "Maximum size of one YAML workflow file."
+          "description": "%config.maxFileBytes%"
+        },
+        "orquestivo.ui.experienceLevel": {
+          "type": "string",
+          "enum": [
+            "beginner",
+            "advanced",
+            "expert"
+          ],
+          "default": "beginner",
+          "enumDescriptions": [
+            "%config.level.beginner%",
+            "%config.level.advanced%",
+            "%config.level.expert%"
+          ],
+          "description": "%config.level%"
+        },
+        "orquestivo.remote.enabled": {
+          "type": "boolean",
+          "default": false,
+          "scope": "application",
+          "description": "%config.remote%"
+        },
+        "orquestivo.ai.enabled": {
+          "type": "boolean",
+          "default": false,
+          "scope": "application",
+          "description": "%config.ai%"
         }
       }
     },
