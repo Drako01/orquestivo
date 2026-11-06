@@ -8,19 +8,19 @@ Plan and criteria: `PLAN_ENTERPRISE_AAAA.md`.
 
 | # | Phase | Status | Notes |
 |---|---|---|---|
-| 0 | Repository audit | IN_PROGRESS | Plan and status created; audit results pending evidence |
-| 1 | Enterprise architecture | IN_PROGRESS | Provider-neutral model, findings and provider contracts defined in `src/core`; consumers still migrating |
-| 2 | Advanced analysis engine | IN_PROGRESS | Rule expansion and corpus tests in progress |
-| 3 | Pipeline design and generation | IN_PROGRESS | Detection and write plan in progress |
-| 4 | Intent and evidence | IN_PROGRESS | Evidence and verdict modules in progress |
-| 5 | Control Center UX/UI | IN_PROGRESS | Not yet verified in the integration host |
-| 6 | i18n and accessibility | IN_PROGRESS | Parity and a11y checks pending |
-| 7 | Security | IN_PROGRESS | `docs/THREAT_MODEL.md` and `docs/SECURITY_AUDIT.md` written; implementation items open |
-| 8 | Quality gates | IN_PROGRESS | `verify-enterprise`, coverage, mutation, SBOM, license and VSIX audits implemented; no full run recorded yet |
-| 9 | Environments and compatibility | IN_PROGRESS | CI covers three OS; WSL, SSH, Dev Containers, multi-root are manual pending (see `docs/COMPATIBILITY.md`) |
-| 10 | Advanced integrations | NOT_STARTED | No remote integration is implemented |
-| 11 | Documentation and onboarding | IN_PROGRESS | Docs under review against shipped behavior |
-| 12 | Release engineering | IN_PROGRESS | Workflows hardened in code, never executed; `private: true` kept until owner approval; no publication performed |
+| 0 | Repository audit | PASS | Plan, status and audit docs written; findings recorded in `docs/SECURITY_AUDIT.md` |
+| 1 | Enterprise architecture | PASS | Provider-neutral model, rule registry, pure `src/ui` vs `src/vscode` split enforced by test |
+| 2 | Advanced analysis engine | PASS | 68 GitHub Actions rules, corpus P/R 1.0 on a small hand-written corpus (caveat: small) |
+| 3 | Pipeline design and generation | WARN | 11 presets, diff/undo implemented and unit-tested; wizard not exercised in a live VS Code; no pinned SHAs for upload-artifact/CodeQL, so those options fail closed |
+| 4 | Intent and evidence | WARN | Contracts and verdicts tested; real GitHub E2E is BLOCKED (no network/credentials) |
+| 5 | Control Center UX/UI | WARN | Unit-tested rendering, CSP, a11y attributes; webview interaction not driven in a live host |
+| 6 | i18n and accessibility | WARN | EN/ES key parity tested; core-generated texts (graph text, intent errors) are English only; no screen reader/manual WCAG audit done |
+| 7 | Security | PASS | Threat model, audit, redaction, safe paths, CSP, SecretStorage; see `docs/SECURITY_AUDIT.md` for residual WARNs |
+| 8 | Quality gates | PASS | `verify:enterprise` all 13 steps PASS on the working tree; mutation sample sizes are small |
+| 9 | Environments and compatibility | BLOCKED | CI covers three OS; WSL, SSH, Dev Containers, multi-root are manual pending (`docs/COMPATIBILITY.md`) |
+| 10 | Advanced integrations | WARN | GitLab/Azure/Jenkins providers, metrics and opt-in GitHub runs implemented with mocks; AI has no bundled provider by design |
+| 11 | Documentation and onboarding | PASS | README, guides, architecture, privacy, troubleshooting updated; no new screenshots (none authentic available) |
+| 12 | Release engineering | BLOCKED | Workflows hardened but never executed; environments/OIDC are owner-side; `private: true` kept; nothing published |
 
 ## Release blockers known by construction
 
@@ -30,18 +30,17 @@ Plan and criteria: `PLAN_ENTERPRISE_AAAA.md`.
 
 ## Evidence
 
-_To be completed by the lead with real results. Each entry: command, commit, date, result, link to the report or log._
+Run date: 2026-11-06, on the working tree immediately before the commit that carries this file (base HEAD `68f8dfd`).
 
-| Item | Command | Commit | Result | Report |
-|---|---|---|---|---|
-| Fast gate | `npm run verify:fast` | | | |
-| Full enterprise gate | `npm run verify:enterprise` | | | `reports/verify-enterprise.md` |
-| Coverage vs thresholds | `npm run test:coverage` | | | `reports/coverage/summary.json` |
-| Mutation testing | `npm run mutation` | | | `reports/mutation.json` |
-| VSIX audit and SHA-256 | `npm run audit:vsix` | | | |
-| SBOM and licenses | `npm run sbom`, `npm run audit:licenses` | | | |
-| Integration host | `npm run test:integration` | | | |
-| CI on exact head | GitHub Actions run | | | |
+| Item | Command | Result | Report |
+|---|---|---|---|
+| Full enterprise gate | `npm run verify:enterprise` | PASS (typecheck, lint, unit, rulesets, coverage, mutation, perf, build-prod, package, vsix-audit, sha256, sbom, audit) | `reports/verify-enterprise.md` (git-ignored) |
+| Unit/contract tests | `npm test` | 723 pass, 0 fail, 1 skipped (real GitHub E2E = BLOCKED) | |
+| VSIX audit | in gate | 20 files, 0 problems | sha256 `846b34b5afb29dda4742e3d5683236f567de4ed6784dbf614b4e165ecb598f94` |
+| npm audit | in gate | 0 vulnerabilities (network available) | |
+| Integration host | `npm run test:integration` | PASS once, real VS Code 1.145.2, only with host `ELECTRON_RUN_AS_NODE`/`VSCODE_*` unset; does not cover wizard/webview/remote/AI | |
+| CI on exact head | GitHub Actions | NOT_STARTED until pushed | |
+| Real GitHub E2E | `test/evidence/github-runs.e2e-real.test.cjs` | BLOCKED | |
 
 ## Reused evidence log
 
