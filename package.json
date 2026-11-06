@@ -162,12 +162,14 @@
     "build:prod": "npm run build -- --minify",
     "typecheck": "tsc --noEmit",
     "test": "npm run build:analyzer && npm run build:generator && node --test test/*.test.cjs",
-    "verify": "npm run typecheck && npm run test && npm run build:prod",
+    "verify": "npm run typecheck && npm run lint && npm run test && npm run build:prod",
     "package": "npm run verify && vsce package --no-dependencies --out orquestivo.vsix",
     "vscode:prepublish": "npm run build:prod",
     "build:analyzer": "esbuild src/core/analyzer.ts --bundle --platform=node --format=cjs --target=node22 --outfile=dist/analyzer.cjs",
     "build:generator": "esbuild src/core/generator.ts --bundle --platform=node --format=cjs --target=node22 --outfile=dist/generator.cjs",
-    "test:integration": "node test/integration/run.mjs"
+    "test:integration": "node test/integration/run.mjs",
+    "lint": "eslint src --max-warnings=0",
+    "test:coverage": "npm run build:analyzer && npm run build:generator && node --experimental-test-coverage --test test/*.test.cjs"
   },
   "dependencies": {
     "yaml": "2.9.1"
@@ -179,6 +181,8 @@
     "esbuild": "0.28.2",
     "typescript": "5.8.3",
     "ovsx": "1.3.0",
-    "@vscode/test-electron": "3.1.0"
+    "@vscode/test-electron": "3.1.0",
+    "eslint": "10.14.0",
+    "typescript-eslint": "8.72.1"
   }
 }
