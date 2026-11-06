@@ -40,8 +40,9 @@ exports.run = async function run() {
 
   // Reproduce generator creation: VS Code displays valid, unsaved YAML while
   // the corresponding on-disk file is still empty.
+  // The generator is a pure module; load the compiled repo sources (built by `npm test`), not the VSIX.
   const { join } = require('node:path');
-  const { generateCI } = require(join(extension.extensionPath, 'dist', 'generator.cjs'));
+  const { generateCI } = require(join(__dirname, '..', '..', 'dist-test', 'core', 'generator.js'));
   const workspace = vscode.workspace.workspaceFolders?.[0];
   assert.ok(workspace, 'Integration tests require an isolated test workspace');
   const target = vscode.Uri.joinPath(workspace.uri, '.github', 'workflows', 'orquestivo-ci.yml');
