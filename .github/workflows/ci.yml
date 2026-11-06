@@ -48,6 +48,21 @@ jobs:
           node-version: 22
       - run: npm install --no-audit --no-fund
       - run: npm run package
+      - name: Inspect packaged extension
+        run: |
+          unzip -q orquestivo.vsix -d packaged
+          test -s packaged/extension/dist/extension.js
+          test -s packaged/extension/media/icon-128.png
+          test -s packaged/extension/media/activity.svg
+          test -f packaged/extension/package.nls.es.json
+          if unzip -Z1 orquestivo.vsix | grep -E '^extension/(src/|test/|node_modules/|\.env|\.git/)'; then
+            echo "::error::Source, test or sensitive files leaked into VSIX"
+            exit 1
+          fi
+      - name: Test the extracted VSIX in real Visual Studio Code
+        env:
+          ORQUESTIVO_PACKAGE_DIR: ${{ github.workspace }}/packaged/extension
+        run: xvfb-run -a npm run test:integration
       - run: sha256sum orquestivo.vsix > orquestivo.vsix.sha256
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
