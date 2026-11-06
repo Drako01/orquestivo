@@ -36,6 +36,19 @@ npm run rulesets:status  # requires GH_TOKEN with ruleset administration permiss
 
 Both `Protect main` and `Protect release tags` were installed and activated on November 5, 2026. Their complete authenticated GitHub API configurations matched the versioned JSON definitions. Re-run `--status` with administrator credentials to check subsequent changes.
 
+### Authenticated verification from PowerShell 7
+
+```powershell
+$env:GH_TOKEN = gh auth token
+try {
+    npm run rulesets:status
+} finally {
+    Remove-Item Env:GH_TOKEN -ErrorAction SilentlyContinue
+}
+```
+
+Do not paste token values into issues, PRs or logs.
+
 ## Apply through an authorized local administrator session
 
 Acquire a fine-grained GitHub token scoped **only** to `Drako01/orquestivo` with **Administration: Read and write**. Store it securely as an ephemeral `GH_TOKEN` environment variable in your terminal; **do not commit it or share it in chat**.

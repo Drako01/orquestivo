@@ -23,6 +23,9 @@ Requirements: Node.js **22+**, npm, VS Code **1.99+**, and Git.
 git clone https://github.com/YOUR-USERNAME/orquestivo.git
 cd orquestivo
 git remote add upstream https://github.com/Drako01/orquestivo.git
+# Until the foundation PR is merged, work from the implementation branch:
+git fetch upstream feat/mvp-foundation
+git switch -c feat/my-first-change FETCH_HEAD
 npm ci
 npm run verify
 ```
@@ -60,7 +63,7 @@ Before submitting a PR:
 - [ ] Confirm no secrets, tokens, proprietary workflows, private logs or unnecessary generated files are included.
 - [ ] Describe any limitations, risks, compatibility impacts and skipped tests.
 
-Open a pull request against **`main`**. GitHub rulesets require CI verification and may require a maintainer review; maintainers handle approvals and merges. **Never force-push to protected branches or create release tags as part of a contribution.** Do not publish the extension.
+While the foundation remains in [PR #1](https://github.com/Drako01/orquestivo/pull/1), coordinate with the maintainer and propose implementation changes against **`feat/mvp-foundation`**. Once the foundation is merged, use **`main`** as the base. GitHub rulesets require CI verification and may require a maintainer review; maintainers handle approvals and merges. **Never force-push to protected branches or create release tags as part of a contribution.** Do not publish the extension.
 
 ## Reporting bugs and security issues
 
