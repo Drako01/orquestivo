@@ -1,0 +1,25 @@
+trigger: none
+pr:
+  - main
+
+pool:
+  vmImage: windows-2022
+
+jobs:
+  - job: Lint
+    timeoutInMinutes: 10
+    steps:
+      - checkout: self
+      - task: NodeTool@0
+        inputs:
+          versionSpec: 22.x
+      - script: npm ci && npm run lint
+  - job: Test
+    dependsOn: Lint
+    timeoutInMinutes: 15
+    steps:
+      - checkout: self
+      - task: NodeTool@0
+        inputs:
+          versionSpec: 22.x
+      - script: npm ci && npm test

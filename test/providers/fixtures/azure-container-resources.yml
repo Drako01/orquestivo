@@ -1,0 +1,32 @@
+trigger:
+  - main
+pr: none
+
+resources:
+  containers:
+    - container: builder
+      image: mcr.microsoft.com/dotnet/sdk:8.0.404
+  repositories:
+    - repository: templates
+      type: git
+      name: Platform/pipeline-templates
+      ref: refs/tags/v2.1.0
+
+variables:
+  - group: shared-secrets
+  - name: region
+    value: westeurope
+
+jobs:
+  - job: Package
+    pool:
+      vmImage: ubuntu-22.04
+    container: builder
+    timeoutInMinutes: 25
+    steps:
+      - script: dotnet publish -c Release
+      - task: PublishPipelineArtifact@1
+        inputs:
+          targetPath: out
+          artifact: drop
+        condition: succeededOrFailed()

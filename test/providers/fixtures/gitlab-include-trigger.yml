@@ -1,0 +1,29 @@
+include:
+  - project: platform/ci-templates
+    ref: v3.2.0
+    file: /templates/security.yml
+  - local: /ci/common.yml
+
+stages: [test, downstream]
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+test:
+  stage: test
+  image: python:3.12.7-slim
+  timeout: 15 minutes
+  script:
+    - pip install -r requirements.txt
+    - pytest
+  artifacts:
+    paths: [reports/]
+    expire_in: 3 days
+
+downstream:
+  stage: downstream
+  needs: [test]
+  trigger:
+    project: group/other-service
+    strategy: depend

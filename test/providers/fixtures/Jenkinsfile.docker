@@ -1,0 +1,41 @@
+// Containerised build with credentials and a gated deploy
+pipeline {
+  agent none
+  options {
+    timeout(time: 45, unit: 'MINUTES')
+    buildDiscarder(logRotator(numToKeepStr: '10'))
+    disableConcurrentBuilds()
+  }
+  environment {
+    REGISTRY_CREDS = credentials('registry-creds')
+  }
+  stages {
+    stage('Build') {
+      agent {
+        docker { image 'node:22.11-alpine' }
+      }
+      steps {
+        sh 'npm ci'
+        sh 'npm run build'
+      }
+    }
+    stage('Push') {
+      agent { label 'docker' }
+      steps {
+        sh 'echo "$REGISTRY_CREDS_PSW" | docker login -u "$REGISTRY_CREDS_USR" --password-stdin'
+        sh 'docker push registry.example.com/app:${BUILD_NUMBER}'
+      }
+    }
+    stage('Deploy to production') {
+      agent { label 'deployer' }
+      when { branch 'main' }
+      steps {
+        input message: 'Deploy to production?'
+        sh './deploy.sh'
+      }
+    }
+  }
+  post {
+    cleanup { cleanWs() }
+  }
+}

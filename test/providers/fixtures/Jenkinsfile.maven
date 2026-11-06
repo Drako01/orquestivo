@@ -1,0 +1,27 @@
+pipeline {
+  agent { label 'linux-build' }
+  options {
+    timeout(time: 30, unit: 'MINUTES')
+    buildDiscarder(logRotator(numToKeepStr: '20'))
+  }
+  stages {
+    stage('Build') {
+      steps {
+        sh 'mvn -B -ntp clean package'
+      }
+    }
+    stage('Test') {
+      steps {
+        sh 'mvn -B -ntp verify'
+      }
+    }
+  }
+  post {
+    always {
+      junit 'target/surefire-reports/*.xml'
+    }
+    failure {
+      echo 'Build failed'
+    }
+  }
+}

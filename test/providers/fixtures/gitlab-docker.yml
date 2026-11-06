@@ -1,0 +1,35 @@
+stages: [lint, package, release]
+
+.base:
+  image: docker:27.3.1
+  services:
+    - docker:27.3.1-dind
+  timeout: 30 minutes
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+
+lint:
+  extends: .base
+  stage: lint
+  script:
+    - docker run --rm -i hadolint/hadolint:v2.12.0 < Dockerfile
+
+package:
+  extends: .base
+  stage: package
+  needs: [lint]
+  script:
+    - docker build -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA" .
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+release:
+  extends: .base
+  stage: release
+  needs: [package]
+  script:
+    - docker tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA" "$CI_REGISTRY_IMAGE:latest"
+    - docker push "$CI_REGISTRY_IMAGE:latest"
+  environment: production
+  when: manual

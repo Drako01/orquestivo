@@ -1,0 +1,37 @@
+pipeline {
+  agent { label 'linux' }
+  options {
+    timeout(time: 1, unit: 'HOURS')
+    buildDiscarder(logRotator(numToKeepStr: '15'))
+    parallelsAlwaysFailFast()
+  }
+  stages {
+    stage('Prepare') {
+      steps {
+        sh 'make deps'
+      }
+    }
+    stage('Checks') {
+      parallel {
+        stage('Unit') {
+          steps { sh 'make test' }
+        }
+        stage('Lint') {
+          steps { sh 'make lint' }
+        }
+      }
+    }
+    stage('Package') {
+      steps {
+        script {
+          def version = sh(script: 'git describe --tags', returnStdout: true).trim()
+          echo "Packaging ${version}"
+        }
+        sh 'make package'
+      }
+    }
+  }
+  post {
+    always { archiveArtifacts artifacts: 'dist/**', allowEmptyArchive: true }
+  }
+}
