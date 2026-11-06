@@ -353,40 +353,48 @@ export class GitHubRunsClient {
     for (let attempt = 0; ; attempt += 1) {
       if (signal?.aborted) throw new GitHubRunsError('aborted', 'Request aborted');
       await this.waitForRateLimit(signal);
-      const timeout = AbortSignal.timeout(this.cfg.timeoutMs);
-      const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
-
-      let response: ResponseLike;
+      // Explicit timer (not AbortSignal.timeout): it is cleared on every exit path and, unlike the
+      // internal unref'd timer, keeps the event loop alive while a request is in flight.
+      const timeoutController = new AbortController();
+      let timedOut = false;
+      const timer = setTimeout(() => { timedOut = true; timeoutController.abort(); }, this.cfg.timeoutMs);
+      const combined = signal ? AbortSignal.any([signal, timeoutController.signal]) : timeoutController.signal;
       try {
-        response = await this.options.fetch(url, { headers, signal: combined });
-      } catch (error) {
-        if (signal?.aborted) throw new GitHubRunsError('aborted', 'Request aborted');
-        const code = timeout.aborted ? 'timeout' : 'network';
-        if (attempt >= this.cfg.maxRetries) {
-          const detail = code === 'timeout' ? `timed out after ${this.cfg.timeoutMs}ms` : (error instanceof Error ? error.message : 'failed');
-          throw new GitHubRunsError(code, `GET ${path} ${detail}`);
-        }
-        await this.sleep(this.backoff(attempt), signal);
-        continue;
-      }
 
-      this.recordRateLimit(response);
-      if (response.status >= 200 && response.status < 300) return this.readJson(response, path);
-
-      const limitedWait = this.rateLimitWait(response, attempt);
-      if (limitedWait !== undefined) {
-        if (limitedWait > this.cfg.maxRateLimitWaitMs || attempt >= this.cfg.maxRetries) {
-          throw new GitHubRunsError('rate-limited', `GitHub rate limit hit on ${path}; retry in ${Math.ceil(limitedWait / 1000)}s`, response.status);
+        let response: ResponseLike;
+        try {
+          response = await this.options.fetch(url, { headers, signal: combined });
+        } catch (error) {
+          if (signal?.aborted) throw new GitHubRunsError('aborted', 'Request aborted');
+          const code = timedOut ? 'timeout' : 'network';
+          if (attempt >= this.cfg.maxRetries) {
+            const detail = code === 'timeout' ? `timed out after ${this.cfg.timeoutMs}ms` : (error instanceof Error ? error.message : 'failed');
+            throw new GitHubRunsError(code, `GET ${path} ${detail}`);
+          }
+          await this.sleep(this.backoff(attempt), signal);
+          continue;
         }
-        this.blockedUntil = 0; // the wait below already honors the reset window
-        await this.sleep(limitedWait, signal);
-        continue;
+
+        this.recordRateLimit(response);
+        if (response.status >= 200 && response.status < 300) return await this.readJson(response, path);
+
+        const limitedWait = this.rateLimitWait(response, attempt);
+        if (limitedWait !== undefined) {
+          if (limitedWait > this.cfg.maxRateLimitWaitMs || attempt >= this.cfg.maxRetries) {
+            throw new GitHubRunsError('rate-limited', `GitHub rate limit hit on ${path}; retry in ${Math.ceil(limitedWait / 1000)}s`, response.status);
+          }
+          this.blockedUntil = 0; // the wait below already honors the reset window
+          await this.sleep(limitedWait, signal);
+          continue;
+        }
+        if (RETRYABLE_STATUS.has(response.status) && attempt < this.cfg.maxRetries) {
+          await this.sleep(this.backoff(attempt), signal);
+          continue;
+        }
+        throw this.statusError(response.status, path);
+      } finally {
+        clearTimeout(timer);
       }
-      if (RETRYABLE_STATUS.has(response.status) && attempt < this.cfg.maxRetries) {
-        await this.sleep(this.backoff(attempt), signal);
-        continue;
-      }
-      throw this.statusError(response.status, path);
     }
   }
 
