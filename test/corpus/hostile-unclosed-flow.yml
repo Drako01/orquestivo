@@ -1,0 +1,2 @@
+on: push
+jobs: {a: [1, 2

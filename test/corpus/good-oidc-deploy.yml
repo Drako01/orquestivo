@@ -1,0 +1,23 @@
+name: Cloud deploy
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency: cloud-deploy
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: staging
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502
+        with:
+          role-to-assume: arn:aws:iam::123456789012:role/deploy
+          aws-region: us-east-1
+      - run: ./deploy.sh

@@ -1,0 +1,8 @@
+__proto__:
+  polluted: true
+on: push
+constructor:
+  prototype: x
+jobs:
+  __proto__:
+    runs-on: ubuntu-latest

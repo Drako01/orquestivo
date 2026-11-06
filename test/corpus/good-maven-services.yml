@@ -1,0 +1,24 @@
+name: Maven
+on: pull_request
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      db:
+        image: postgres@sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_PASSWORD: test
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
+        with:
+          path: ~/.m2
+          key: m2-${{ hashFiles('**/pom.xml') }}
+      - run: mvn --batch-mode verify

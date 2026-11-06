@@ -1,0 +1,28 @@
+name: Containers
+on: push
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 0
+    container: node:20
+    continue-on-error: true
+    services:
+      - redis
+    steps:
+      - run: npm test
+        continue-on-error: true
+      - run: echo one
+        if: always()
+      - run: echo two
+        if: always()
+      - run: echo three
+        if: always()
+  other:
+    runs-on: ubuntu-latest
+    timeout-minutes: 400
+    container:
+      options: --cpus 1
+    steps:
+      - run: echo ok

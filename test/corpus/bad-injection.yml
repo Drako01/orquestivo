@@ -1,0 +1,9 @@
+name: Greeter
+on: issues
+jobs:
+  greet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          echo "New issue: ${{ github.event.issue.title }}"

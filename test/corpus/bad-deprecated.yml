@@ -1,0 +1,11 @@
+name: Legacy commands
+on: push
+permissions:
+  contents: read
+jobs:
+  legacy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: echo "::set-output name=version::1.2.3"
+      - run: echo "::set-env name=MODE::ci"
