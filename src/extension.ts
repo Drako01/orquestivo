@@ -80,14 +80,17 @@ export function activate(context: vscode.ExtensionContext): void {
       for (const uri of uris.slice(0, maxFiles)) {
         if (token.isCancellationRequested) return;
         try {
-          const bytes = await vscode.workspace.fs.readFile(uri);
-          if (bytes.byteLength > maxBytes) {
+          // Analyze the editor's in-memory document, including unsaved changes.
+          // Reading workspace.fs directly here can observe an empty on-disk file
+          // immediately after WorkspaceEdit creates and populates a new workflow.
+          const doc = await vscode.workspace.openTextDocument(uri);
+          const source = doc.getText();
+          if (Buffer.byteLength(source, 'utf8') > maxBytes) {
             next.push({ uri: uri.toString(), path: vscode.workspace.asRelativePath(uri), findings: [{ code: 'FILE_LIMIT', severity: 'warning', line: 1, evidence: 'static', message: tr('oversized', language) }], syntaxValid: false, executionVerified: false });
             continue;
           }
-          const analyzed = analyzeWorkflow(new TextDecoder().decode(bytes));
+          const analyzed = analyzeWorkflow(source);
           next.push({ ...analyzed, uri: uri.toString(), path: vscode.workspace.asRelativePath(uri) });
-          const doc = await vscode.workspace.openTextDocument(uri);
           diagnostics.set(uri, analyzed.findings.map(f => {
             const line = Math.max(0, Math.min(f.line - 1, doc.lineCount - 1));
             const d = new vscode.Diagnostic(doc.lineAt(line).range, `[${f.code}] ${f.message}`, f.severity === 'error' ? vscode.DiagnosticSeverity.Error : f.severity === 'warning' ? vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Information);
@@ -180,7 +183,14 @@ export function activate(context: vscode.ExtensionContext): void {
       await vscode.window.showErrorMessage(tr('writeError', language));
       return;
     }
-    await vscode.window.showTextDocument(target);
+    // A WorkspaceEdit can leave generated text only in an unsaved editor buffer.
+    // Save the new workflow before rescanning so the editor and disk agree.
+    const created = await vscode.workspace.openTextDocument(target);
+    if (!await created.save()) {
+      await vscode.window.showErrorMessage(tr('writeError', language));
+      return;
+    }
+    await vscode.window.showTextDocument(created);
     await scan();
     showHome();
   };

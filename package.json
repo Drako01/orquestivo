@@ -167,7 +167,7 @@
     "vscode:prepublish": "npm run build:prod",
     "build:analyzer": "esbuild src/core/analyzer.ts --bundle --platform=node --format=cjs --target=node22 --outfile=dist/analyzer.cjs",
     "build:generator": "esbuild src/core/generator.ts --bundle --platform=node --format=cjs --target=node22 --outfile=dist/generator.cjs",
-    "test:integration": "node test/integration/run.mjs",
+    "test:integration": "npm run build:generator && node test/integration/run.mjs",
     "lint": "eslint src --max-warnings=0",
     "test:coverage": "npm run build:analyzer && npm run build:generator && node --experimental-test-coverage --test test/*.test.cjs",
     "rulesets:check": "node scripts/rulesets.mjs --check",
