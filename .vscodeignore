@@ -1,0 +1,11 @@
+src/**
+test/**
+scripts/**
+.github/**
+node_modules/**
+*.vsix
+*.log
+tsconfig.json
+.gitignore
+.vscodeignore
+CHANGELOG-DRAFT.md

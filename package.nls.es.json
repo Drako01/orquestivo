@@ -1,0 +1,10 @@
+{
+  "command.home": "Abrir centro de control",
+  "command.analyze": "Analizar workflows de GitHub Actions",
+  "command.openFinding": "Abrir hallazgo",
+  "view.overview": "Diagnóstico de workflows",
+  "walkthrough.title": "Primeros pasos con Orquestivo",
+  "walkthrough.description": "Inspeccioná workflows de GitHub Actions antes de subir cambios.",
+  "walkthrough.analyze.title": "Analizar workflows",
+  "walkthrough.analyze.description": "Abrí un espacio de trabajo confiable y ejecutá **Orquestivo: Analizar workflows de GitHub Actions**."
+}
