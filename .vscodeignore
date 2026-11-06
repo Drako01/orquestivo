@@ -30,3 +30,6 @@ orquestivo.vsix
 media/brand-approved-full.png
 media/readme-logo.webp
 media/0*.png
+
+dist/analyzer.cjs
+dist/generator.cjs
