@@ -1,0 +1,11 @@
+syntaxValid: true
+executionVerified: false
+   1 error       EVENT_MISSING
+   3 information PERMISSIONS_UNDECLARED
+   4 error       RUNNER_MISSING
+   8 error       STEPS_MISSING
+  10 error       JOB_INVALID
+  12 information TIMEOUT_UNSET
+  14 error       STEP_ACTION_MISSING
+  15 error       STEP_RUN_AND_USES
+  17 error       STEP_INVALID

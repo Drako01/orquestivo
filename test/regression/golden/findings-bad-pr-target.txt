@@ -1,0 +1,8 @@
+syntaxValid: true
+executionVerified: false
+   2 warning     PR_TARGET_REVIEW
+   7 error       SELF_HOSTED_PR_TARGET
+   7 information TIMEOUT_UNSET
+   9 warning     PR_TARGET_CHECKOUT_REVIEW
+   9 warning     ACTION_NOT_PINNED
+  12 warning     CURL_PIPE_SHELL

@@ -1,0 +1,7 @@
+syntaxValid: true
+executionVerified: false
+   3 warning     PERMISSIONS_WRITE_ALL
+   9 error       PERMISSIONS_UNKNOWN_SCOPE
+   9 information PERMISSIONS_WRITE_REVIEW
+   9 warning     ID_TOKEN_WITHOUT_NEED
+  10 error       PERMISSIONS_INVALID_VALUE
