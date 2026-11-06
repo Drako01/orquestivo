@@ -4,3 +4,4 @@ dist/
 *.log
 .vscode-test/
 .DS_Store
+dist-test/

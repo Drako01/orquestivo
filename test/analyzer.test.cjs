@@ -1,7 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { analyzeWorkflow } = require('../dist/analyzer.cjs');
-const { generateCI } = require('../dist/generator.cjs');
+const { analyzeWorkflow } = require('../dist-test/core/analyzer.js');
+const { generateCI } = require('../dist-test/core/generator.js');
 const pin = 'a'.repeat(40);
 const base = 'name: CI\non: [push, pull_request]\npermissions:\n  contents: read\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    timeout-minutes: 10\n    steps:\n      - uses: actions/checkout@' + pin + '\n      - run: npm test\n';
 const codes = value => analyzeWorkflow(value).findings.map(f => f.code);
