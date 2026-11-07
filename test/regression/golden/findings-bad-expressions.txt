@@ -1,0 +1,8 @@
+syntaxValid: true
+executionVerified: false
+   9 error       EXPR_CONTEXT_UNAVAILABLE
+  13 error       EXPR_UNKNOWN_CONTEXT
+  14 error       EXPR_UNKNOWN_FUNCTION
+  15 error       EXPR_UNBALANCED
+  16 error       EXPR_MATRIX_UNDEFINED
+  17 error       EXPR_SECRETS_IN_IF

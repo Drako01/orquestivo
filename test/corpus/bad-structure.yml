@@ -1,0 +1,17 @@
+name: Broken
+jobs:
+  norunner:
+    timeout-minutes: 5
+    steps:
+      - run: echo hi
+  nosteps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+  junk: true
+  weird:
+    runs-on: ubuntu-latest
+    steps:
+      - name: nothing
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        run: echo both
+      - just text

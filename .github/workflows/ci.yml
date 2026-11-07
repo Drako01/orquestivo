@@ -1,0 +1,91 @@
+name: CI
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    # The job name is a required status check in .github/rulesets/protect-main.json: do not rename.
+    name: Verify (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Verify (full enterprise gate)
+        if: runner.os == 'Linux'
+        run: npm run verify:enterprise
+      - name: Verify (OS-sensitive subset)
+        if: runner.os != 'Linux'
+        run: npm run verify:platform
+      - name: Upload verification reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: verify-reports-${{ runner.os }}
+          path: |
+            reports/verify-enterprise.json
+            reports/verify-enterprise.md
+            reports/mutation.json
+            reports/sbom.cdx.json
+            reports/coverage/summary.json
+            reports/logs/
+          if-no-files-found: warn
+          retention-days: 14
+
+  package-preview:
+    name: Package installable preview VSIX
+    needs: verify
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - name: Package VSIX (the verify job already ran the full gate)
+        run: npx --no-install vsce package --no-dependencies --out orquestivo.vsix
+      - name: Audit packaged VSIX content
+        run: npm run audit:vsix
+      - name: Extract VSIX
+        run: unzip -q orquestivo.vsix -d packaged
+      - name: Compile pure modules used by the integration suite
+        run: node scripts/build-tests.mjs
+      - name: Test the extracted VSIX in real Visual Studio Code
+        env:
+          ORQUESTIVO_PACKAGE_DIR: ${{ github.workspace }}/packaged/extension
+        run: xvfb-run -a npm run test:integration
+      - name: Write and verify SHA-256
+        run: |
+          node scripts/vsix-checksum.mjs write orquestivo.vsix
+          node scripts/vsix-checksum.mjs check orquestivo.vsix
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: orquestivo-preview-vsix
+          path: |
+            orquestivo.vsix
+            orquestivo.vsix.sha256
+            reports/steps/vsix-audit.json
+          if-no-files-found: error
+          retention-days: 14

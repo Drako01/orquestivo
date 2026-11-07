@@ -1,0 +1,13 @@
+name: Calls
+on: push
+permissions:
+  contents: read
+jobs:
+  broken:
+    uses: acme/shared@v1
+  floating:
+    uses: acme/shared/.github/workflows/ci.yml@main
+    secrets: inherit
+  both:
+    uses: ./.github/workflows/ci.yml
+    runs-on: ubuntu-latest

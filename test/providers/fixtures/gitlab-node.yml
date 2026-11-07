@@ -1,0 +1,42 @@
+stages: [build, test, deploy]
+
+default:
+  image: node:22.11-alpine
+  timeout: 20 minutes
+
+variables:
+  NODE_ENV: production
+
+build:
+  stage: build
+  script:
+    - npm ci
+    - npm run build
+  cache:
+    key:
+      files: [package-lock.json]
+    paths: [node_modules/]
+  artifacts:
+    paths: [dist/]
+    expire_in: 1 week
+
+unit-tests:
+  stage: test
+  needs: [build]
+  script:
+    - npm test
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+deploy-production:
+  stage: deploy
+  needs: [unit-tests]
+  script:
+    - ./scripts/deploy.sh
+  environment:
+    name: production
+    url: https://example.com
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual

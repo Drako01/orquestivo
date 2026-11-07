@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.vsix
+*.log
+.vscode-test/
+.DS_Store
+dist-test/
+reports/
+orquestivo.vsix.sha256
+TODO

@@ -1,0 +1,260 @@
+[
+  {
+    "file": "good-node-ci.yml",
+    "kind": "good",
+    "expected": []
+  },
+  {
+    "file": "good-release-deploy.yml",
+    "kind": "good",
+    "expected": [
+      "PERMISSIONS_WRITE_REVIEW"
+    ]
+  },
+  {
+    "file": "good-python-matrix.yml",
+    "kind": "good",
+    "expected": []
+  },
+  {
+    "file": "good-reusable-caller.yml",
+    "kind": "good",
+    "expected": []
+  },
+  {
+    "file": "good-scheduled-audit.yml",
+    "kind": "good",
+    "expected": []
+  },
+  {
+    "file": "good-maven-services.yml",
+    "kind": "good",
+    "expected": []
+  },
+  {
+    "file": "good-pr-labeler.yml",
+    "kind": "good",
+    "expected": [
+      "PR_TARGET_REVIEW",
+      "PERMISSIONS_WRITE_REVIEW"
+    ]
+  },
+  {
+    "file": "good-oidc-deploy.yml",
+    "kind": "good",
+    "expected": [
+      "PERMISSIONS_WRITE_REVIEW"
+    ]
+  },
+  {
+    "file": "bad-injection.yml",
+    "kind": "bad",
+    "expected": [
+      "EXPRESSION_IN_SCRIPT",
+      "ACTION_NOT_PINNED",
+      "PERMISSIONS_UNDECLARED",
+      "TIMEOUT_UNSET"
+    ]
+  },
+  {
+    "file": "bad-pr-target.yml",
+    "kind": "bad",
+    "expected": [
+      "PR_TARGET_REVIEW",
+      "PR_TARGET_CHECKOUT_REVIEW",
+      "SELF_HOSTED_PR_TARGET",
+      "ACTION_NOT_PINNED",
+      "CURL_PIPE_SHELL",
+      "TIMEOUT_UNSET"
+    ]
+  },
+  {
+    "file": "bad-events.yml",
+    "kind": "bad",
+    "expected": [
+      "EVENT_UNKNOWN",
+      "BRANCHES_CONFLICT",
+      "PATHS_CONFLICT",
+      "CRON_INVALID",
+      "TIMEOUT_UNSET"
+    ]
+  },
+  {
+    "file": "bad-needs.yml",
+    "kind": "bad",
+    "expected": [
+      "NEEDS_UNKNOWN",
+      "NEEDS_CYCLE",
+      "NEEDS_CONTEXT_UNDECLARED",
+      "TIMEOUT_UNSET"
+    ]
+  },
+  {
+    "file": "bad-matrix.yml",
+    "kind": "bad",
+    "expected": [
+      "MATRIX_EMPTY",
+      "MATRIX_UNKNOWN_KEY",
+      "MATRIX_STRATEGY_INVALID",
+      "MATRIX_INVALID"
+    ]
+  },
+  {
+    "file": "bad-expressions.yml",
+    "kind": "bad",
+    "expected": [
+      "EXPR_UNBALANCED",
+      "EXPR_UNKNOWN_CONTEXT",
+      "EXPR_UNKNOWN_FUNCTION",
+      "EXPR_SECRETS_IN_IF",
+      "EXPR_CONTEXT_UNAVAILABLE",
+      "EXPR_MATRIX_UNDEFINED"
+    ]
+  },
+  {
+    "file": "bad-deploy.yml",
+    "kind": "bad",
+    "expected": [
+      "DEPLOY_ENVIRONMENT_MISSING",
+      "DEPLOY_CONCURRENCY_MISSING",
+      "TIMEOUT_UNSET",
+      "ACTION_NOT_PINNED"
+    ]
+  },
+  {
+    "file": "bad-secrets-curl.yml",
+    "kind": "bad",
+    "expected": [
+      "SECRET_ECHO",
+      "CURL_PIPE_SHELL",
+      "TIMEOUT_UNSET"
+    ]
+  },
+  {
+    "file": "bad-deprecated.yml",
+    "kind": "bad",
+    "expected": [
+      "DEPRECATED_SET_OUTPUT",
+      "DEPRECATED_SET_ENV"
+    ]
+  },
+  {
+    "file": "bad-permissions.yml",
+    "kind": "bad",
+    "expected": [
+      "PERMISSIONS_WRITE_ALL",
+      "PERMISSIONS_UNKNOWN_SCOPE",
+      "PERMISSIONS_INVALID_VALUE",
+      "PERMISSIONS_WRITE_REVIEW",
+      "ID_TOKEN_WITHOUT_NEED"
+    ]
+  },
+  {
+    "file": "bad-artifacts-cache.yml",
+    "kind": "bad",
+    "expected": [
+      "ARTIFACT_NAME_UNSET",
+      "ARTIFACT_RETENTION_UNSET",
+      "ARTIFACT_DOWNLOAD_ORPHAN",
+      "CACHE_KEY_NO_HASHFILES",
+      "SETUP_CACHE_MISSING",
+      "CHECKOUT_PERSIST_CREDENTIALS"
+    ]
+  },
+  {
+    "file": "bad-containers.yml",
+    "kind": "bad",
+    "expected": [
+      "CONTAINER_MUTABLE_TAG",
+      "CONTAINER_INVALID",
+      "SERVICES_INVALID",
+      "CONTINUE_ON_ERROR_GATE",
+      "ALWAYS_OVERUSE",
+      "CONTINUE_ON_ERROR_REVIEW",
+      "TIMEOUT_INVALID",
+      "TIMEOUT_EXCESSIVE"
+    ]
+  },
+  {
+    "file": "bad-reusable.yml",
+    "kind": "bad",
+    "expected": [
+      "REUSABLE_USES_FORMAT",
+      "REUSABLE_WORKFLOW_UNPINNED",
+      "SECRETS_INHERIT_REVIEW",
+      "REUSABLE_JOB_CONFLICT"
+    ]
+  },
+  {
+    "file": "bad-structure.yml",
+    "kind": "bad",
+    "expected": [
+      "EVENT_MISSING",
+      "RUNNER_MISSING",
+      "STEPS_MISSING",
+      "STEP_ACTION_MISSING",
+      "STEP_RUN_AND_USES",
+      "JOB_INVALID",
+      "STEP_INVALID",
+      "TIMEOUT_UNSET",
+      "PERMISSIONS_UNDECLARED"
+    ]
+  },
+  {
+    "file": "hostile-alias-bomb.yml",
+    "kind": "hostile",
+    "expected": [
+      "YAML_INVALID"
+    ]
+  },
+  {
+    "file": "hostile-deep-nesting.yml",
+    "kind": "hostile",
+    "expected": null
+  },
+  {
+    "file": "hostile-empty.yml",
+    "kind": "hostile",
+    "expected": [
+      "WORKFLOW_ROOT_INVALID"
+    ]
+  },
+  {
+    "file": "hostile-scalar.yml",
+    "kind": "hostile",
+    "expected": [
+      "WORKFLOW_ROOT_INVALID"
+    ]
+  },
+  {
+    "file": "hostile-duplicate-keys.yml",
+    "kind": "hostile",
+    "expected": [
+      "YAML_INVALID"
+    ]
+  },
+  {
+    "file": "hostile-tabs.yml",
+    "kind": "hostile",
+    "expected": [
+      "YAML_INVALID"
+    ]
+  },
+  {
+    "file": "hostile-proto-keys.yml",
+    "kind": "hostile",
+    "expected": null
+  },
+  {
+    "file": "hostile-unclosed-flow.yml",
+    "kind": "hostile",
+    "expected": [
+      "YAML_INVALID"
+    ]
+  },
+  {
+    "file": "hostile-binary.yml",
+    "kind": "hostile",
+    "expected": null
+  }
+]

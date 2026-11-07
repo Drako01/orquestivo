@@ -1,0 +1,255 @@
+{
+  "name": "orquestivo",
+  "displayName": "Orquestivo",
+  "description": "Design, inspect, and verify CI/CD workflows with evidence-backed diagnostics.",
+  "version": "0.1.1",
+  "publisher": "armotusitio",
+  "author": {
+    "name": "Alejandro Daniel Di Stefano",
+    "url": "https://armotusitio.com.ar"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Drako01/orquestivo.git"
+  },
+  "bugs": {
+    "url": "https://armotusitio.com.ar/soporte/"
+  },
+  "homepage": "https://armotusitio.com.ar",
+  "preview": true,
+  "engines": {
+    "vscode": "^1.99.0"
+  },
+  "categories": [
+    "Linters",
+    "Testing",
+    "Other"
+  ],
+  "keywords": [
+    "github actions",
+    "ci/cd",
+    "workflow",
+    "pipeline",
+    "yaml",
+    "devops",
+    "validation",
+    "orchestration"
+  ],
+  "icon": "media/icon-128.png",
+  "galleryBanner": {
+    "color": "#14181D",
+    "theme": "dark"
+  },
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onView:orquestivo.overview"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "%capabilities.untrusted%"
+    },
+    "virtualWorkspaces": {
+      "supported": true,
+      "description": "%capabilities.virtual%"
+    }
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "orquestivo.openHome",
+        "title": "%command.home%",
+        "category": "Orquestivo"
+      },
+      {
+        "command": "orquestivo.analyze",
+        "title": "%command.analyze%",
+        "category": "Orquestivo",
+        "icon": "$(beaker)"
+      },
+      {
+        "command": "orquestivo.generateCI",
+        "title": "%command.generate%",
+        "category": "Orquestivo",
+        "icon": "$(add)"
+      },
+      {
+        "command": "orquestivo.undoLastGeneration",
+        "title": "%command.undo%",
+        "category": "Orquestivo"
+      },
+      {
+        "command": "orquestivo.openFinding",
+        "title": "%command.openFinding%",
+        "category": "Orquestivo"
+      },
+      {
+        "command": "orquestivo.connectGitHub",
+        "title": "%command.connect%",
+        "category": "Orquestivo"
+      },
+      {
+        "command": "orquestivo.disconnectGitHub",
+        "title": "%command.disconnect%",
+        "category": "Orquestivo"
+      },
+      {
+        "command": "orquestivo.fetchRuns",
+        "title": "%command.fetchRuns%",
+        "category": "Orquestivo"
+      },
+      {
+        "command": "orquestivo.ai.explainFinding",
+        "title": "%command.explain%",
+        "category": "Orquestivo"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "orquestivo",
+          "title": "Orquestivo",
+          "icon": "media/activity.svg"
+        }
+      ]
+    },
+    "views": {
+      "orquestivo": [
+        {
+          "id": "orquestivo.overview",
+          "name": "%view.overview%"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "orquestivo.analyze",
+          "when": "view == orquestivo.overview && isWorkspaceTrusted",
+          "group": "navigation@1"
+        },
+        {
+          "command": "orquestivo.openHome",
+          "when": "view == orquestivo.overview",
+          "group": "navigation@2"
+        },
+        {
+          "command": "orquestivo.generateCI",
+          "when": "view == orquestivo.overview && isWorkspaceTrusted",
+          "group": "navigation@3"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "orquestivo.openFinding",
+          "when": "false"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Orquestivo",
+      "properties": {
+        "orquestivo.analysis.maxFiles": {
+          "type": "integer",
+          "default": 150,
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "%config.maxFiles%"
+        },
+        "orquestivo.analysis.maxFileBytes": {
+          "type": "integer",
+          "default": 1048576,
+          "minimum": 1024,
+          "maximum": 10485760,
+          "description": "%config.maxFileBytes%"
+        },
+        "orquestivo.ui.experienceLevel": {
+          "type": "string",
+          "enum": [
+            "beginner",
+            "advanced",
+            "expert"
+          ],
+          "default": "beginner",
+          "enumDescriptions": [
+            "%config.level.beginner%",
+            "%config.level.advanced%",
+            "%config.level.expert%"
+          ],
+          "description": "%config.level%"
+        },
+        "orquestivo.remote.enabled": {
+          "type": "boolean",
+          "default": false,
+          "scope": "application",
+          "description": "%config.remote%"
+        },
+        "orquestivo.ai.enabled": {
+          "type": "boolean",
+          "default": false,
+          "scope": "application",
+          "description": "%config.ai%"
+        }
+      }
+    },
+    "walkthroughs": [
+      {
+        "id": "getStarted",
+        "title": "%walkthrough.title%",
+        "description": "%walkthrough.description%",
+        "steps": [
+          {
+            "id": "analyze",
+            "title": "%walkthrough.analyze.title%",
+            "description": "%walkthrough.analyze.description%",
+            "media": {
+              "markdown": "docs/WALKTHROUGH.md"
+            },
+            "completionEvents": [
+              "onCommand:orquestivo.analyze"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --target=node22 --external:vscode --outfile=dist/extension.js",
+    "build:prod": "npm run build -- --minify",
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/build-tests.mjs && node --test \"test/**/*.test.cjs\"",
+    "verify": "npm run typecheck && npm run lint && npm run rulesets:check && npm run test && npm run build:prod",
+    "package": "npm run verify && vsce package --no-dependencies --out orquestivo.vsix",
+    "vscode:prepublish": "npm run build:prod",
+    "build:analyzer": "esbuild src/core/analyzer.ts --bundle --platform=node --format=cjs --target=node22 --outfile=dist/analyzer.cjs",
+    "build:generator": "esbuild src/core/generator.ts --bundle --platform=node --format=cjs --target=node22 --outfile=dist/generator.cjs",
+    "test:integration": "node test/integration/run.mjs",
+    "lint": "eslint src --max-warnings=0",
+    "test:coverage": "node scripts/coverage.mjs",
+    "rulesets:check": "node scripts/rulesets.mjs --check",
+    "rulesets:status": "node scripts/rulesets.mjs --status",
+    "verify:fast": "node scripts/verify-enterprise.mjs --profile fast",
+    "verify:platform": "node scripts/verify-enterprise.mjs --profile platform",
+    "verify:enterprise": "node scripts/verify-enterprise.mjs --profile enterprise",
+    "verify:release": "node scripts/verify-enterprise.mjs --profile enterprise --no-cache --strict",
+    "mutation": "node scripts/mutation/run.mjs",
+    "sbom": "node scripts/sbom.mjs",
+    "audit:licenses": "node scripts/license-audit.mjs",
+    "audit:vsix": "node scripts/vsix-audit.mjs"
+  },
+  "dependencies": {
+    "yaml": "2.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.30",
+    "@types/vscode": "1.99.1",
+    "@vscode/vsce": "4.1.0",
+    "esbuild": "0.28.2",
+    "typescript": "5.8.3",
+    "ovsx": "1.3.0",
+    "@vscode/test-electron": "3.1.0",
+    "eslint": "10.14.0",
+    "typescript-eslint": "8.72.1"
+  }
+}

@@ -1,0 +1,21 @@
+name: Graph
+on: push
+permissions:
+  contents: read
+jobs:
+  a:
+    needs: [b]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: echo a
+  b:
+    needs: [a, ghost]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: echo b
+  c:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo ${{ needs.a.outputs.value }}

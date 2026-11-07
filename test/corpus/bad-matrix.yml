@@ -1,0 +1,33 @@
+name: Matrix
+on: push
+permissions:
+  contents: read
+jobs:
+  empty:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        os: []
+    steps:
+      - run: echo hi
+  excluded:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: "sometimes"
+      max-parallel: 0
+      matrix:
+        os: [ubuntu-latest]
+        exclude:
+          - arch: arm64
+    steps:
+      - run: echo hi
+  scalar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        os: ubuntu-latest
+    steps:
+      - run: echo hi

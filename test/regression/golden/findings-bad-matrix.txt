@@ -1,0 +1,7 @@
+syntaxValid: true
+executionVerified: false
+  11 error       MATRIX_EMPTY
+  18 error       MATRIX_STRATEGY_INVALID
+  19 error       MATRIX_STRATEGY_INVALID
+  23 warning     MATRIX_UNKNOWN_KEY
+  31 error       MATRIX_INVALID

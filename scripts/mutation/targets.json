@@ -1,0 +1,12 @@
+{
+  "comment": "Critical modules mutated by scripts/mutation/run.mjs. 'tests' are globs relative to the repo root. A target whose source file does not exist yet is reported as SKIP. minScore is a percentage (killed / (killed + survived)). Remaining survivors in verdict.ts/analyzer.ts are type-level string/boolean literals erased at compile time (equivalent mutants).",
+  "maxMutantsPerTarget": 40,
+  "mutantTimeoutMs": 60000,
+  "targets": [
+    { "source": "src/core/analyzer.ts", "tests": ["test/analyzer.test.cjs", "test/mutation-kill/analyzer.test.cjs"], "minScore": 85 },
+    { "source": "src/core/evidence/verdict.ts", "tests": ["test/evidence*.test.cjs", "test/verdict*.test.cjs", "test/evidence/*.test.cjs", "test/mutation-kill/verdict.test.cjs"], "minScore": 55 },
+    { "source": "src/security/redact.ts", "tests": ["test/security/*.test.cjs", "test/mutation-kill/redact.test.cjs"], "minScore": 90 },
+    { "source": "src/core/analysis/topology.ts", "tests": ["test/mutation-kill/topology.test.cjs", "test/analyzer*.test.cjs"], "minScore": 90 },
+    { "source": "src/providers/shared/graph.ts", "tests": ["test/mutation-kill/topology.test.cjs", "test/providers/*.test.cjs"], "minScore": 90 }
+  ]
+}

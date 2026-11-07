@@ -1,0 +1,3 @@
+syntaxValid: false
+executionVerified: false
+   2 error       YAML_INVALID

@@ -1,0 +1,18 @@
+name: Expressions
+on: push
+permissions:
+  contents: read
+env:
+  MODE: fast
+jobs:
+  broken:
+    if: env.MODE == 'fast'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: echo ${{ gitub.ref }}
+      - run: echo ${{ containz(github.ref, 'x') }}
+      - run: echo ${{ contains(github.ref, 'x' }}
+      - run: echo ${{ matrix.os }}
+      - if: secrets.DEPLOY_KEY != ''
+        run: echo deploy
