@@ -4,12 +4,14 @@ Format follows Keep a Changelog; versions follow SemVer. Nothing here has been p
 
 ## Version strategy
 
-- `package.json` is at `0.1.0` and `"private": true`. **This changelog does not bump it.**
-- The original public `0.1.0` scope was a GitHub Actions static analyzer, a read-only Control Center and four CI templates.
-- The work under **Unreleased** is a substantial superset (multi-provider analysis, intent contracts, opt-in evidence, wizard generator, optional AI contracts, verify harness). Because `0.1.0` was never published, the maintainer decides between (a) releasing everything as `0.1.0`, or (b) releasing it as `0.2.0` and treating the original scope as an internal milestone. The recommendation is **0.2.0**, so the version describes the contents; the bump happens in the release commit together with removal of `private: true`, after owner approval ([docs/RELEASE.md](docs/RELEASE.md)).
-- If the unreleased entries are cut as `0.2.0`, the `0.1.0` section below stays as the internal foundation milestone.
+- `0.1.0` was uploaded manually to both registries as the first preview. This work is released as **`0.1.1`** (the owner chose a patch-level bump); the registries do not allow re-publishing an existing version.
+- Publication is automatic from `main`: a merge that changes `package.json` to a version without a GitHub Release starts [`publish.yml`](.github/workflows/publish.yml), and each registry job waits for approval on its protected Environment ([docs/RELEASE.md](docs/RELEASE.md)).
 
 ## [Unreleased]
+
+_Nothing yet._
+
+## [0.1.1] — 2026-11-06
 
 ### Added
 - Multi-provider analysis behind a `CiProvider` registry: GitLab CI/CD, Azure Pipelines and Jenkins (declarative), next to GitHub Actions ([docs/PROVIDERS.md](docs/PROVIDERS.md)).
