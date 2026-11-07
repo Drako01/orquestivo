@@ -1,7 +1,11 @@
-# Manual release ONLY. No push, PR, tag or scheduled triggers.
+# Release pipeline. Triggers: a push to main (only publishes when package.json holds a version that has no
+# GitHub Release yet) or a manual dispatch (recovery / explicit confirmation). Every registry job still waits
+# for approval on its protected Environment. No PR, tag or scheduled triggers.
 # See docs/RELEASE.md for the approval checklist, environment setup and partial-publish recovery.
 name: publish
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       confirmation:
@@ -28,13 +32,14 @@ concurrency:
 jobs:
   authorize:
     name: Authorize release
-    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'PUBLISH_ORQUESTIVO'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || inputs.confirmation == 'PUBLISH_ORQUESTIVO')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: read
     outputs:
       version: ${{ steps.version.outputs.version }}
+      publish: ${{ steps.version.outputs.publish }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -42,10 +47,20 @@ jobs:
       - name: Validate release preconditions
         id: version
         env:
+          EVENT_NAME: ${{ github.event_name }}
           REQUESTED_VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           version=$(node -p "require('./package.json').version")
-          [ "$version" = "$REQUESTED_VERSION" ] || { echo "::error::Requested version $REQUESTED_VERSION differs from package.json $version."; exit 1; }
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            [ "$version" = "$REQUESTED_VERSION" ] || { echo "::error::Requested version $REQUESTED_VERSION differs from package.json $version."; exit 1; }
+          elif gh release view "v$version" > /dev/null 2>&1; then
+            # Push to main without a version bump: nothing to publish.
+            echo "Release v$version already exists; skipping publication."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           # The owner removes "private": true only when approving the release. While it is present nothing is published.
           if [ "$(node -p "Boolean(require('./package.json').private)")" = "true" ]; then
             echo "::error::package.json has \"private\": true. The owner must remove it in the approved release commit."
@@ -53,10 +68,12 @@ jobs:
           fi
           grep -Fq "## [$version]" CHANGELOG.md || { echo "::error::A released changelog entry for $version is required."; exit 1; }
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "publish=true" >> "$GITHUB_OUTPUT"
 
   verify-platforms:
     name: Verify (${{ matrix.os }})
     needs: authorize
+    if: needs.authorize.outputs.publish == 'true'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 25
     permissions:
@@ -79,6 +96,7 @@ jobs:
     # Builds, fully verifies (strict, no cache) and packages the ONE VSIX that both marketplaces receive.
     name: Verify and package VSIX
     needs: authorize
+    if: needs.authorize.outputs.publish == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 40
     permissions:
@@ -135,7 +153,7 @@ jobs:
   marketplace:
     name: Publish to Visual Studio Marketplace
     needs: [authorize, verify-platforms, package]
-    if: inputs.registries == 'both' || inputs.registries == 'marketplace'
+    if: needs.authorize.outputs.publish == 'true' && (github.event_name == 'push' || inputs.registries == 'both' || inputs.registries == 'marketplace')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # Protected environment: required reviewers, deployment branch limited to main, OIDC trust registered
@@ -168,7 +186,7 @@ jobs:
   open-vsx:
     name: Publish to Open VSX
     needs: [authorize, verify-platforms, package]
-    if: inputs.registries == 'both' || inputs.registries == 'open-vsx'
+    if: needs.authorize.outputs.publish == 'true' && (github.event_name == 'push' || inputs.registries == 'both' || inputs.registries == 'open-vsx')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: open-vsx

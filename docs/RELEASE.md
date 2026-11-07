@@ -6,8 +6,8 @@ The pipeline follows the Marketplace + Open VSX design used for Probato PR, with
 
 ## Principles
 
-- Manual only: `.github/workflows/publish.yml` has a single `workflow_dispatch` trigger (no push, PR, tag or schedule).
-- Explicit confirmation: the dispatch needs `confirmation = PUBLISH_ORQUESTIVO`, the exact `version`, and must run from `main`.
+- Triggers: `.github/workflows/publish.yml` runs on a push to `main` (it publishes only when `package.json` holds a version with no GitHub Release yet) or on a manual `workflow_dispatch` (recovery). No PR, tag or schedule triggers. Each registry job still waits for approval on its protected Environment.
+- Confirmation: a manual dispatch needs `confirmation = PUBLISH_ORQUESTIVO`, the exact `version`, and must run from `main`. A push to `main` relies on the Environment reviewers as the human gate.
 - One artifact: a single VSIX is built and verified once (`package` job), uploaded as artifact `vsix`, and both registries and the GitHub Release receive that same file. Every consumer re-checks its SHA-256 against the value produced by the `package` job.
 - Least privilege: workflow-level `permissions: {}`; each job declares only what it needs. `id-token: write` exists only in the two publish jobs, `contents: write` only in `release`.
 - Protected environments gate every side effect: `marketplace`, `open-vsx`, `github-release`.
@@ -16,7 +16,7 @@ The pipeline follows the Marketplace + Open VSX design used for Probato PR, with
 
 ## `private: true` in `package.json`
 
-`package.json` keeps `"private": true` until the owner approves a release. This is deliberate: `vsce publish` refuses private packages and `publish.yml` fails in `authorize` with an explicit message while the flag is present. The flag is removed by the owner in the approved release commit (together with the version/changelog), never by automation. Its presence is not a defect and must not be worked around.
+The flag was removed in the `0.1.1` release commit. `publish.yml` still fails in `authorize` if it is ever present again, so a private package can never be published by accident.
 
 ## One-time owner setup (not verifiable from the repository)
 
@@ -31,7 +31,7 @@ The pipeline follows the Marketplace + Open VSX design used for Probato PR, with
 3. `npm run verify:release` is green locally or in CI on the exact head: typecheck, lint, tests, rulesets, coverage thresholds, mutation floor, performance budgets, production build, VSIX package + content audit + SHA-256, SBOM, license audit, `npm audit`. `BLOCKED` or `INCONCLUSIVE` is not a pass.
 4. CI is green on the exact head for Linux, Windows and macOS, and the preview VSIX was exercised in a real VS Code.
 5. Maintainer approval recorded; `"private": true` removed in the release commit; merged to `main` by the owner.
-6. Run the **publish** workflow (`Actions > publish > Run workflow`): `confirmation`, `version`, `registries = both`, empty `vsix_run_id`.
+6. Merging to `main` starts **publish** by itself; approve the `marketplace`, `open-vsx` and `github-release` Environments when prompted. To recover a partial publish, use `Actions > publish > Run workflow`: `confirmation`, `version`, a single `registries` value and the `vsix_run_id` of the earlier run.
 7. Approve the `marketplace` and `open-vsx` deployments.
 8. Check actual visibility: the workflow polls the Marketplace gallery (`scripts/check-marketplace.mjs`); Open VSX activation can lag and is reported separately. A green workflow is not proof of a live listing; open both listings.
 9. The `release` job creates tag `vX.Y.Z` and the GitHub Release with the VSIX, its `.sha256`, the SBOM and the verification report, then downloads the released asset and re-verifies the checksum.
