@@ -14,6 +14,8 @@ export type LineLocator = (path: Path, atKey?: boolean) => number;
 export const MAX_SOURCE_LENGTH = 2_000_000;
 export const MAX_ALIAS_COUNT = 50;
 const MAX_WALK_DEPTH = 40;
+/** Flow collections (`[`/`{`) nested deeper than any real workflow; rejecting early avoids a costly parse. */
+const MAX_FLOW_DEPTH = 100;
 
 export const asMap = (value: unknown): Mapping | undefined =>
   value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Mapping : undefined;
@@ -61,10 +63,29 @@ function createLocator(contents: unknown, counter: LineCounter): LineLocator {
   };
 }
 
+/** Line (1-based) where flow nesting first exceeds the limit, or undefined. A linear scan, far cheaper than parsing. */
+function flowDepthViolation(source: string): number | undefined {
+  let depth = 0;
+  let line = 1;
+  for (let i = 0; i < source.length; i += 1) {
+    const char = source.charCodeAt(i);
+    if (char === 10) line += 1;
+    else if (char === 91 || char === 123) {
+      depth += 1;
+      if (depth > MAX_FLOW_DEPTH) return line;
+    } else if ((char === 93 || char === 125) && depth > 0) depth -= 1;
+  }
+  return undefined;
+}
+
 /** Parses defensively: size guard, alias cap, and every parser failure becomes a reported issue. */
 export function parseWorkflow(source: string): ParseResult {
   if (source.length > MAX_SOURCE_LENGTH) {
     return failure('too-large', 'Workflow exceeds the ' + MAX_SOURCE_LENGTH + ' character analysis limit.');
+  }
+  const tooDeep = flowDepthViolation(source);
+  if (tooDeep !== undefined) {
+    return { ok: false, reason: 'syntax', issues: [{ message: 'Flow collections are nested deeper than ' + MAX_FLOW_DEPTH + ' levels.', line: tooDeep }] };
   }
   const counter = new LineCounter();
   try {
