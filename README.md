@@ -9,7 +9,7 @@
 
 <p align="center">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-7C8CF8">
-  <img alt="Status: unreleased preview" src="https://img.shields.io/badge/status-unreleased%20preview-14181D">
+  <img alt="Status: preview" src="https://img.shields.io/badge/status-preview-14181D">
   <img alt="Visual Studio Code 1.99+" src="https://img.shields.io/badge/VS_Code-1.99%2B-14181D">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178C6">
 </p>
@@ -29,7 +29,7 @@
 
 A pipeline can be valid YAML and still be **unsafe, fragile or incorrect for its intended purpose**. Orquestivo is an open-source, local-first VS Code extension that inspects CI/CD pipelines, checks them against what you say they must achieve, and generates conservative CI starting points.
 
-**Current status: unreleased preview, not published.** The package version is `0.1.0` and `package.json` is still `"private": true`. This repository now contains more than the original 0.1.0 scope (see [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md)). The decision on release is recorded honestly in [RELEASE_READINESS.md](RELEASE_READINESS.md): **not ready for public release**.
+**Current status: public preview (`0.1.1`).** Published to the Visual Studio Marketplace and Open VSX as a preview. See [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md). Known gaps (real GitHub E2E, WSL/SSH/Dev Containers checks, manual accessibility audit) are tracked honestly in [RELEASE_READINESS.md](RELEASE_READINESS.md).
 
 Orquestivo reports **static inference** by default. It does not run your pipeline. Only opt-in, read-only evidence from real GitHub Actions runs can back a statement about what actually happened, and even then it does not prove business requirements are met.
 
@@ -139,7 +139,7 @@ Declare what the pipeline must guarantee in `.orquestivo/intent.json`. Each crit
 
 ### Try the development preview
 
-The extension is **not published** to the Visual Studio Marketplace or Open VSX. Build the VSIX locally, or use the preview VSIX artifact from a successful CI run on [PR #1](https://github.com/Drako01/orquestivo/pull/1).
+Install **Orquestivo** (publisher `armotusitio`) from the Visual Studio Marketplace or Open VSX. To try a build from source instead, build the VSIX locally with `npm run package`.
 
 Prerequisites: **VS Code 1.99+**, **Node.js 22+** and npm. For analysis, open a **trusted** repository that contains pipeline files.
 
@@ -180,7 +180,7 @@ Verdict aggregation: `FAIL > BLOCKED > INCONCLUSIVE > WARN > SKIP > PASS`. An ag
 - **No bundled AI.** AI is off by default and the repository ships no network code or provider SDK for it. Suggestions are never evidence.
 - **Workspace Trust matters.** Analysis and generation require a trusted workspace; reads are bounded.
 - **Environments.** CI covers Linux (full gate and real VS Code), Windows and macOS (platform gate). WSL, Remote SSH, Dev Containers, multi-root and monorepos are not yet manually verified: [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
-- **Not published; `private: true`.** Marketplace and Open VSX publication, OIDC and environment protection are owner-side and unverified from the repository.
+- **Preview release.** Publication runs from `main` through [`publish.yml`](.github/workflows/publish.yml); OIDC trust and Environment protection are owner-side settings that cannot be verified from the repository.
 
 Related: [Security](SECURITY.md), [Privacy](PRIVACY.md), [Threat model](docs/THREAT_MODEL.md), [Security audit](docs/SECURITY_AUDIT.md), [Architecture](ARCHITECTURE.md), [Roadmap](ROADMAP.md).
 
