@@ -14,7 +14,9 @@ import { applyMutation, findMutations, sample } from './mutations.mjs';
 
 const { flags, values } = parseArgs(process.argv.slice(2), ['max-mutants', 'min-score', 'target']);
 const config = readJson(join(ROOT, 'scripts', 'mutation', 'targets.json'));
-const runId = (process.env.ORQUESTIVO_MUTATION_RUN_ID ?? `${process.pid}-${Date.now()}`).replace(/[^a-zA-Z0-9_.-]/g, '_');
+const inheritedRunId = process.env.ORQUESTIVO_MUTATION_RUN_ID;
+const runId = inheritedRunId && /^orq-[0-9]+-[0-9]+$/.test(inheritedRunId)
+  ? inheritedRunId : `orq-${process.pid}-${Date.now()}`;
 const slug = (source) => source.replace(/[^a-zA-Z0-9_.-]/g, '_');
 const RESULT_DIR = join(ROOT, 'reports', '.mutation', 'results', runId);
 const WORK = join(ROOT, 'reports', '.mutation', 'work', runId, slug(values.target ?? 'all'));
@@ -115,7 +117,10 @@ if (!selected.length) {
     const results = new Array(selected.length);
     let nextIndex = 0;
     const running = new Set();
-    const cancel = () => { for (const child of running) child.kill('SIGTERM'); };
+    const cancel = () => {
+      for (const child of running) child.kill('SIGTERM');
+      process.exit(130); // stop dispatching new mutants after cancellation
+    };
     process.once('SIGTERM', cancel);
     process.once('SIGINT', cancel);
     console.log(`[mutation] ${selected.length} targets, ${concurrency} isolated workers, ${limits.max} mutants/target`);
