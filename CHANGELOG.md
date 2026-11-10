@@ -11,6 +11,13 @@ Format follows Keep a Changelog; versions follow SemVer. Nothing here has been p
 
 _Nothing yet._
 
+## [0.1.2] — 2026-11-10
+
+### Changed
+- Release Orquestivo 0.1.2 as a stable extension by removing the VS Code `preview` manifest flag.
+- Update the Marketplace extension icon with transparent rounded corners while preserving the Orquestivo branding.
+- No functional code changes.
+
 ## [0.1.1] — 2026-11-06
 
 ### Added
