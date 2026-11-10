@@ -1,2 +1,3 @@
 # Default code owner for all paths, matching Probato PR and Indizivo.
+# Orquestivo has a single owner: they approve pull requests or merge through the ruleset bypass (see docs/RELEASE.md, "Ownership model").
 * @Drako01

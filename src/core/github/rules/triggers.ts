@@ -36,6 +36,11 @@ const PR_TARGET_CHECKOUT_REVIEW = meta('PR_TARGET_CHECKOUT_REVIEW', 'warning', '
 const SELF_HOSTED_PR_TARGET = meta('SELF_HOSTED_PR_TARGET', 'error', 'security',
   'A privileged trigger on a self-hosted runner lets pull-request code persist on your infrastructure.',
   'Use GitHub-hosted ephemeral runners for pull_request_target workflows.', DOCS.selfHosted);
+const SELF_HOSTED_PR_REVIEW = meta('SELF_HOSTED_PR_REVIEW', 'information', 'security',
+  'On a public repository, pull requests from forks can run code on a self-hosted runner and persist on your infrastructure.',
+  'Use GitHub-hosted ephemeral runners for pull_request, or restrict who can trigger the workflow.', DOCS.selfHosted);
+
+const usesSelfHosted = (job: Record<string, unknown>): boolean => /\bself-hosted\b/i.test(JSON.stringify(job['runs-on'] ?? ''));
 
 interface FieldRange { readonly min: number; readonly max: number; readonly names?: readonly string[] }
 const CRON_FIELDS: readonly FieldRange[] = [
@@ -84,7 +89,7 @@ const CONFLICTS = [
 export const triggersRule: Rule = {
   id: 'triggers',
   metas: [EVENT_UNKNOWN, BRANCHES_CONFLICT, TAGS_CONFLICT, PATHS_CONFLICT, CRON_INVALID,
-    PR_TARGET_REVIEW, PR_TARGET_CHECKOUT_REVIEW, SELF_HOSTED_PR_TARGET],
+    PR_TARGET_REVIEW, PR_TARGET_CHECKOUT_REVIEW, SELF_HOSTED_PR_TARGET, SELF_HOSTED_PR_REVIEW],
   check(ctx) {
     for (const [event, config] of ctx.events) {
       if (!KNOWN_EVENTS.has(event)) {
@@ -109,6 +114,13 @@ export const triggersRule: Rule = {
         }
       }
     }
+    if (ctx.events.has('pull_request') && !ctx.privileged) {
+      for (const { id, job, path } of ctx.jobs) {
+        if (usesSelfHosted(job)) {
+          ctx.report(SELF_HOSTED_PR_REVIEW, 'Job "' + id + '" uses a self-hosted runner under pull_request.', [...path, 'runs-on']);
+        }
+      }
+    }
     if (!ctx.privileged) return;
     ctx.report(PR_TARGET_REVIEW,
       'pull_request_target is privileged; never execute untrusted pull-request code with elevated permissions.', ['on']);
@@ -119,8 +131,7 @@ export const triggersRule: Rule = {
       }
     }
     for (const { id, job, path } of ctx.jobs) {
-      const runsOn = JSON.stringify(job['runs-on'] ?? '');
-      if (/\bself-hosted\b/i.test(runsOn)) {
+      if (usesSelfHosted(job)) {
         ctx.report(SELF_HOSTED_PR_TARGET,
           'Job "' + id + '" uses a self-hosted runner under pull_request_target.', [...path, 'runs-on']);
       }

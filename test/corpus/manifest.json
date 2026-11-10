@@ -5,6 +5,11 @@
     "expected": []
   },
   {
+    "file": "good-injection-safe.yml",
+    "kind": "good",
+    "expected": []
+  },
+  {
     "file": "good-release-deploy.yml",
     "kind": "good",
     "expected": [
@@ -54,6 +59,13 @@
       "ACTION_NOT_PINNED",
       "PERMISSIONS_UNDECLARED",
       "TIMEOUT_UNSET"
+    ]
+  },
+  {
+    "file": "bad-injection-contexts.yml",
+    "kind": "bad",
+    "expected": [
+      "EXPRESSION_IN_SCRIPT"
     ]
   },
   {

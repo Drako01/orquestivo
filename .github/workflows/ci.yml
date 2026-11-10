@@ -2,8 +2,6 @@ name: CI
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
 permissions:
   contents: read
 concurrency:
@@ -11,14 +9,16 @@ concurrency:
   cancel-in-progress: true
 jobs:
   verify:
-    # The job name is a required status check in .github/rulesets/protect-main.json: do not rename.
+    # Preserve the Windows/macOS required check names from Protect main.
     name: Verify (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [windows-latest, macos-latest]
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -27,30 +27,150 @@ jobs:
         with:
           node-version: 22
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Verify (full enterprise gate)
-        if: runner.os == 'Linux'
-        run: npm run verify:enterprise
       - name: Verify (OS-sensitive subset)
-        if: runner.os != 'Linux'
         run: npm run verify:platform
-      - name: Upload verification reports
-        if: ${{ !cancelled() }}
+
+  verify-ubuntu-base:
+    name: Ubuntu enterprise verification (mutation runs separately)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Verify all enterprise gates except separately sharded mutation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/verify-enterprise.mjs --profile enterprise-ci --strict
+      - name: Archive original enterprise reports
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: verify-reports-${{ runner.os }}
+          name: verify-reports-Linux-base
+          path: |
+            reports/verify-enterprise.json
+            reports/verify-enterprise.md
+            reports/sbom.cdx.json
+            reports/coverage/summary.json
+            reports/steps/
+            reports/logs/
+          if-no-files-found: error
+          retention-days: 14
+
+  mutation-rest:
+    name: Mutations (11 modules)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Execute all critical mutation targets except write-plan
+        run: node scripts/mutation/run.mjs --exclude-target src/core/generation/write-plan.ts
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mutation-rest
+          path: reports/mutation.json
+          if-no-files-found: error
+          retention-days: 14
+
+  mutation-write-plan:
+    name: Mutations (write-plan ${{ matrix.shard }}/4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Execute 10 of the original 40 deterministic write-plan mutations
+        run: node scripts/mutation/run.mjs --target src/core/generation/write-plan.ts --slice-index ${{ matrix.shard }} --slice-count 4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mutation-write-plan-${{ matrix.shard }}
+          path: reports/mutation.json
+          if-no-files-found: error
+          retention-days: 14
+
+  verify-ubuntu:
+    # This is the ORIGINAL required status check name. It only passes once all 12 mutation floors
+    # and the complete remaining enterprise gate have succeeded on the SAME PR SHA.
+    name: Verify (ubuntu-latest)
+    needs: [verify-ubuntu-base, mutation-rest, mutation-write-plan]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Require all prerequisite verification jobs
+        env:
+          BASE: ${{ needs.verify-ubuntu-base.result }}
+          OTHER: ${{ needs.mutation-rest.result }}
+          WRITE_PLAN: ${{ needs.mutation-write-plan.result }}
+        run: |
+          test "$BASE" = success
+          test "$OTHER" = success
+          test "$WRITE_PLAN" = success
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - name: Download all mutation shard reports
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: mutation-*
+          path: mutation-artifacts
+          merge-multiple: false
+      - name: Restore verified enterprise reports
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: verify-reports-Linux-base
+          path: reports
+      - name: Aggregate all 12 modules and enforce unchanged score thresholds
+        run: node scripts/mutation/aggregate-ci.mjs mutation-artifacts
+      - name: Archive full verified enterprise evidence
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: verify-reports-Linux
           path: |
             reports/verify-enterprise.json
             reports/verify-enterprise.md
             reports/mutation.json
             reports/sbom.cdx.json
             reports/coverage/summary.json
+            reports/steps/
             reports/logs/
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 14
 
   package-preview:
     name: Package installable preview VSIX
-    needs: verify
+    needs: [verify, verify-ubuntu]
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -80,12 +200,18 @@ jobs:
         run: |
           node scripts/vsix-checksum.mjs write orquestivo.vsix
           node scripts/vsix-checksum.mjs check orquestivo.vsix
+      - name: Stamp PR CI source and artifact digest
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/release-provenance.mjs stamp
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: orquestivo-preview-vsix
           path: |
             orquestivo.vsix
             orquestivo.vsix.sha256
+            reports/pr-preview-provenance.json
             reports/steps/vsix-audit.json
           if-no-files-found: error
           retention-days: 14

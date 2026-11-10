@@ -79,6 +79,10 @@ const CASES = {
     neg: [W(J({ steps: [checkout] }), { on: 'on: pull_request_target' }),
       W(J({ steps: ['- uses: actions/checkout@' + PIN + '\n  with:\n    ref: main'] }))],
   },
+  SELF_HOSTED_PR_REVIEW: {
+    pos: [W(J({ runsOn: '[self-hosted, linux]' }), { on: 'on: pull_request' })],
+    neg: [W(J({ runsOn: '[self-hosted, linux]' })), W(J(), { on: 'on: pull_request' }), W(J({ runsOn: '[self-hosted]' }), { on: 'on: pull_request_target' })],
+  },
   SELF_HOSTED_PR_TARGET: {
     pos: [W(J({ runsOn: '[self-hosted, linux]' }), { on: 'on: pull_request_target' })],
     neg: [W(J({ runsOn: '[self-hosted, linux]' })), W(J(), { on: 'on: pull_request_target' })],
@@ -237,8 +241,24 @@ const CASES = {
   },
   TIMEOUT_EXCESSIVE: { pos: [W(J({ timeout: 361 }))], neg: [W(J({ timeout: 360 }))] },
   EXPRESSION_IN_SCRIPT: {
-    pos: [run('echo ' + X('github.event.pull_request.title')), run('echo ' + X('github.event.head_commit.message'))],
-    neg: [run('echo ' + X('github.sha')), run('echo "$TITLE"')],
+    pos: [
+      run('echo ' + X('github.event.pull_request.title')), run('echo ' + X('github.event.head_commit.message')),
+      run('git checkout ' + X('github.head_ref')), run('echo ' + X('github.ref_name')),
+      run('echo ' + X('inputs.name')), run('echo ' + X('github.event.inputs.name')),
+      run('echo ' + X('github.event.workflow_run.head_commit.message')),
+      run('echo ' + X("format('{0}', github.event.pull_request.title)")),
+      run('echo ' + X('fromJSON(github.event.pull_request.body).x')),
+      run('echo ' + X("github['event']['issue']['title']")),
+      run('echo ' + X('github.event.review.body')), run('echo ' + X('github.event.discussion.title')),
+      withStep('- uses: actions/github-script@' + PIN + '\n  with:\n    script: |\n      console.log("' + X('github.event.issue.title') + '")'),
+    ],
+    neg: [
+      run('echo ' + X('github.sha')), run('echo "$TITLE"'), run('echo ' + X('github.event.pull_request.number')),
+      run('echo ' + X('github.event.pull_request.head.sha')), run('echo ' + X("'github.head_ref'")),
+      run('echo ' + X('secrets.TOKEN') + ' | docker login --password-stdin'),
+      withStep('- uses: actions/github-script@' + PIN + '\n  env:\n    TITLE: ' + X('github.event.issue.title') + '\n  with:\n    script: |\n      console.log(process.env.TITLE)'),
+      withStep('- uses: actions/github-script@' + PIN + '\n  with:\n    script: |\n      console.log(context.payload.issue.title)'),
+    ],
   },
   SECRET_ECHO: {
     pos: [run('echo ' + X('secrets.TOKEN')), run('printf "%s" ' + X('secrets.TOKEN'))],

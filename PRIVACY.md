@@ -1,6 +1,6 @@
 # Privacy Policy
 
-Orquestivo is local-first. This document describes the behavior of the unreleased preview in this repository.
+Orquestivo is local-first. This document describes the behavior of Orquestivo as implemented in this repository.
 
 ## Default behavior (nothing configured)
 

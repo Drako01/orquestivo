@@ -4,6 +4,7 @@ import { AiExplainer } from './vscode/ai.js';
 import { ControlCenter } from './vscode/control-center.js';
 import { DiagnosticsPublisher, FixActionProvider } from './vscode/diagnostics.js';
 import { GeneratorWizard, PreviewContent } from './vscode/generator.js';
+import { registerIntegrationPrompts } from './vscode/e2e-prompts.js';
 import { RemoteEvidence } from './vscode/remote.js';
 import { Logger, relativePath, resolveWorkspaceUri, revealLine, t } from './vscode/runtime.js';
 import { ScanService } from './vscode/scan-service.js';
@@ -15,6 +16,7 @@ const RESCAN_DEBOUNCE_MS = 600;
 
 /** Composition root: builds the services and wires them to VS Code. Logic lives in src/vscode and src/ui. */
 export function activate(context: vscode.ExtensionContext): void {
+  registerIntegrationPrompts(context);
   const log = new Logger();
   const store = new ScanStore();
   const diagnostics = new DiagnosticsPublisher();

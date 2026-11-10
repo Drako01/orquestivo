@@ -1,0 +1,29 @@
+name: Triage
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      label:
+        type: string
+        required: true
+permissions:
+  contents: read
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        with:
+          persist-credentials: false
+      - env:
+          BRANCH: ${{ github.head_ref }}
+          LABEL: ${{ inputs.label }}
+        run: |
+          echo "Branch $BRANCH label $LABEL pr ${{ github.event.pull_request.number }}"
+      - uses: actions/github-script@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+        with:
+          script: |
+            core.info(process.env.BODY)

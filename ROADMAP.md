@@ -15,7 +15,7 @@ Public source repository; the extension is **not released**. Checked items mean 
 - [ ] Accessibility and full localization acceptance
 
 ## Analysis and providers
-- [x] GitHub Actions: 68 rule codes, positions, severity, categories ([docs/ANALYSIS.md](docs/ANALYSIS.md))
+- [x] GitHub Actions: 69 rule codes, positions, severity, categories ([docs/ANALYSIS.md](docs/ANALYSIS.md))
 - [x] GitLab CI, Azure Pipelines and Jenkins (declarative) providers behind a registry ([docs/PROVIDERS.md](docs/PROVIDERS.md))
 - [x] Provider-neutral `PipelineModel` and job graph with textual alternative
 - [x] Corpus-based precision/recall gate for the GitHub analyzer and a performance budget
