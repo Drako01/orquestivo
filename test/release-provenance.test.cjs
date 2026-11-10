@@ -16,10 +16,14 @@ test('release: only actual merged PR and successful pre-merge exact-head CI qual
   const { selectMergedPr, selectSuccessfulRun } = await load();
   assert.equal(selectMergedPr([pr], sha('a')).number, 4);
   assert.equal(selectSuccessfulRun([run], pr).id, 123);
+  // Real GitHub Actions behavior after closing PR #4: pull_requests becomes [].
+  // That does not invalidate the successful exact-head run (run #42871117473).
+  assert.equal(selectSuccessfulRun([{ ...run, pull_requests: [] }], pr).id, 123);
   for (const change of [
     { conclusion: 'failure' }, { conclusion: 'cancelled' }, { event: 'push' },
     { head_sha: sha('c') }, { path: '.github/workflows/publish.yml' },
-    { pull_requests: [{ number: 99 }] }, { created_at: '2026-11-10T20:00:00Z' },
+    { pull_requests: [{ number: 99 }] }, { pull_requests: undefined },
+    { created_at: '2026-11-10T20:00:00Z' },
   ]) assert.throws(() => selectSuccessfulRun([{ ...run, ...change }], pr));
   assert.throws(() => selectMergedPr([{ ...pr, base: { ref: 'develop' } }], sha('a')));
   assert.throws(() => selectMergedPr([{ ...pr, merge_commit_sha: sha('c') }], sha('a')));
