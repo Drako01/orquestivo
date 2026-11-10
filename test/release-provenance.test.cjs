@@ -22,6 +22,8 @@ test('release: only actual merged PR and successful pre-merge exact-head CI qual
     { pull_requests: [{ number: 99 }] }, { created_at: '2026-11-10T20:00:00Z' },
   ]) assert.throws(() => selectSuccessfulRun([{ ...run, ...change }], pr));
   assert.throws(() => selectMergedPr([{ ...pr, base: { ref: 'develop' } }], sha('a')));
+  assert.throws(() => selectMergedPr([{ ...pr, merge_commit_sha: sha('c') }], sha('a')));
+  assert.throws(() => selectSuccessfulRun([{ ...run, head_repository: { full_name: 'someone/else' } }], pr));
 });
 
 test('release: provenance fails closed on altered repository, SHA, tree, version or run', async () => {
