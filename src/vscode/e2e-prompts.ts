@@ -21,7 +21,9 @@ export function registerIntegrationPrompts(context: vscode.ExtensionContext): vo
     inputs = [];
   }
   function patch(name: string, method: ApiMethod): void {
-    if (!original.has(name)) original.set(name, api[name]);
+    const methodBeforePatch = api[name];
+    if (typeof methodBeforePatch !== 'function') throw new Error('VS Code window API unavailable: ' + name);
+    if (!original.has(name)) original.set(name, methodBeforePatch);
     api[name] = method;
   }
   function message(kind: keyof Messages): ApiMethod {
@@ -34,7 +36,9 @@ export function registerIntegrationPrompts(context: vscode.ExtensionContext): vo
     vscode.commands.registerCommand('orquestivo.__e2e.prompts.begin', (settings?: Settings) => {
       restore();
       messages = { info: [], warning: [], error: [] };
-      inputs = Array.isArray(settings?.inputs) ? settings.inputs.filter((v) => typeof v === 'string') : [];
+      const suppliedInputs = settings?.inputs;
+      inputs = Array.isArray(suppliedInputs)
+        ? suppliedInputs.filter((v): v is string => typeof v === 'string') : [];
       patch('showInformationMessage', message('info'));
       patch('showWarningMessage', message('warning'));
       patch('showErrorMessage', message('error'));
