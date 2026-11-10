@@ -1,3 +1,4 @@
+import { realpathSync } from 'node:fs';
 import * as vscode from 'vscode';
 import {
   GeneratorOptionsError, OPERATING_SYSTEMS, WriteRefusedError, authorizeWrite, createWritePlan, detectStack, generateCI, missingMarkers,
@@ -5,6 +6,7 @@ import {
 } from '../core/generator.js';
 import { githubActionsProvider } from '../core/github/provider.js';
 import { parseJsonBounded } from '../security/limits.js';
+import { resolveInside } from '../security/safe-path.js';
 import { parseUndoRecord, type UndoRecord } from '../ui/undo.js';
 import {
   DEFAULT_WORKFLOW_FILE, WIZARD_TRIGGERS, availableSteps, buildGeneratorOptions, orderedPresets, stepDefaults, supportsAudit,
@@ -70,6 +72,14 @@ async function writeWorkspaceFile(uri: vscode.Uri, content: string): Promise<boo
   return (await vscode.workspace.openTextDocument(uri)).save();
 }
 
+/**
+ * True when `relativePath` stays inside `folder` after following symlinks and junctions. Virtual file systems
+ * (non-`file` schemes) have no links to follow, so the workspace API itself is the boundary there.
+ */
+function isInsideFolder(folder: vscode.Uri, relativePath: string): boolean {
+  return folder.scheme !== 'file' || resolveInside(folder.fsPath, relativePath, realpathSync).ok;
+}
+
 const targetUri = (folder: vscode.Uri, relativePath: string): vscode.Uri => vscode.Uri.joinPath(folder, ...relativePath.split('/'));
 
 export class GeneratorWizard {
@@ -101,6 +111,7 @@ export class GeneratorWizard {
     const generated = this.render(choices, detection);
     if (generated === undefined) return;
     const relativePath = workflowRelativePath(fileName);
+    if (!isInsideFolder(folder.uri, relativePath)) { await vscode.window.showErrorMessage(t('writeOutsideWorkspace')); return; }
     const uri = targetUri(folder.uri, relativePath);
     let existing: string | undefined;
     try {
@@ -136,6 +147,7 @@ export class GeneratorWizard {
     if (!vscode.workspace.isTrusted) { await vscode.window.showWarningMessage(t('untrusted')); return; }
     const folder = vscode.Uri.parse(record.folderUri, true);
     if (!vscode.workspace.getWorkspaceFolder(folder)) { await vscode.window.showWarningMessage(t('undoNothing')); return; }
+    if (!isInsideFolder(folder, record.rollback.path)) { await vscode.window.showErrorMessage(t('writeOutsideWorkspace')); return; }
     const uri = targetUri(folder, record.rollback.path);
     const confirm = t('undoConfirm');
     if (await vscode.window.showWarningMessage(t('undoPrompt', { path: record.rollback.path }), { modal: true }, confirm) !== confirm) return;

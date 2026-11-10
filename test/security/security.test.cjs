@@ -140,3 +140,25 @@ test('limits: json bound and byte-length (not char-length) accounting', () => {
   assert.throws(() => assertMaxBytes('ñññ', 5, 'text'), LimitExceededError);
   assert.throws(() => parseJsonBounded('{bad', 100), SyntaxError);
 });
+
+// ------------------------------------------------------------------ safe-path on a real file system
+test('safe-path: a real symlink or junction pointing outside the root is rejected', (t) => {
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'orquestivo-safe-path-'));
+  t.after(() => fs.rmSync(base, { recursive: true, force: true }));
+  const project = path.join(base, 'project');
+  const elsewhere = path.join(base, 'elsewhere');
+  fs.mkdirSync(path.join(project, '.github'), { recursive: true });
+  fs.mkdirSync(elsewhere);
+  try {
+    fs.symlinkSync(elsewhere, path.join(project, '.github', 'workflows'), 'junction');
+  } catch (error) {
+    t.skip('cannot create links here: ' + error.code);
+    return;
+  }
+  const escaped = resolveInside(project, '.github/workflows/ci.yml', fs.realpathSync);
+  assert.deepEqual(escaped, { ok: false, reason: 'symlink-escape' });
+  fs.mkdirSync(path.join(project, 'plain'));
+  assert.equal(resolveInside(project, 'plain/ci.yml', fs.realpathSync).ok, true);
+});

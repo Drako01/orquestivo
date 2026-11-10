@@ -1,7 +1,64 @@
 {
-  "comment": "Per-module-group floors measured on original src/*.ts (see scripts/coverage.mjs). Groups with no measured files report WARN (no data) rather than PASS. Raise floors as coverage improves; never lower them without a documented reason in ENTERPRISE_AAAA_STATUS.md.",
+  "comment": "Per-module-group floors measured on original src/*.ts (see scripts/coverage.mjs). Every measurable source folder is gated. Groups with no measured files report WARN (no data) rather than PASS. Raise floors as coverage improves; never lower them without a documented reason in ENTERPRISE_AAAA_STATUS.md. src/extension.ts and src/vscode/ import 'vscode' and are exercised by the integration suite instead (test/integration).",
   "groups": [
-    { "name": "core-critical", "pattern": "src/core/{analyzer,generator}.ts", "lines": 85, "branches": 75 },
-    { "name": "core-other", "pattern": "src/core/*.ts", "lines": 60 }
+    {
+      "name": "core-critical",
+      "pattern": "src/core/{analyzer,generator}.ts",
+      "lines": 85,
+      "branches": 75
+    },
+    {
+      "name": "core-other",
+      "pattern": "src/core/*.ts",
+      "lines": 60
+    },
+    {
+      "name": "github-rules",
+      "pattern": "src/core/github/**",
+      "lines": 97,
+      "branches": 90
+    },
+    {
+      "name": "evidence",
+      "pattern": "src/core/evidence/**",
+      "lines": 95,
+      "branches": 90
+    },
+    {
+      "name": "generation",
+      "pattern": "src/core/generation/**",
+      "lines": 97,
+      "branches": 85
+    },
+    {
+      "name": "analysis",
+      "pattern": "src/core/analysis/**",
+      "lines": 97,
+      "branches": 90
+    },
+    {
+      "name": "providers",
+      "pattern": "src/providers/**",
+      "lines": 97,
+      "branches": 88
+    },
+    {
+      "name": "security",
+      "pattern": "src/security/**",
+      "lines": 98,
+      "branches": 95
+    },
+    {
+      "name": "ai",
+      "pattern": "src/ai/**",
+      "lines": 98,
+      "branches": 95
+    },
+    {
+      "name": "ui",
+      "pattern": "src/ui/**",
+      "lines": 95,
+      "branches": 83
+    }
   ]
 }

@@ -29,6 +29,8 @@ jobs:
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Verify (full enterprise gate)
         if: runner.os == 'Linux'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: npm run verify:enterprise
       - name: Verify (OS-sensitive subset)
         if: runner.os != 'Linux'
@@ -44,6 +46,7 @@ jobs:
             reports/mutation.json
             reports/sbom.cdx.json
             reports/coverage/summary.json
+            reports/steps/
             reports/logs/
           if-no-files-found: warn
           retention-days: 14

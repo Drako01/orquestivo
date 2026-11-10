@@ -1,0 +1,25 @@
+name: Triage
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      label:
+        type: string
+        required: true
+permissions:
+  contents: read
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        with:
+          persist-credentials: false
+      - run: git checkout ${{ github.head_ref }}
+      - run: echo "Label ${{ inputs.label }}"
+      - run: echo "${{ format('{0}', github.event.pull_request.title) }}"
+      - uses: actions/github-script@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        with:
+          script: |
+            core.info("${{ github.event.pull_request.body }}")

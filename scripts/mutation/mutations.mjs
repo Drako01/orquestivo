@@ -17,6 +17,10 @@ export function findMutations(source) {
   const sites = [];
   const lineOf = (index) => source.slice(0, index).split('\n').length;
   const add = (start, end, replacement, kind) => sites.push({ start, end, replacement, kind, line: lineOf(start) });
+  // String literals inside `type`/`interface` declarations (and `| 'A'` union continuations) are erased at compile time:
+  // mutating them yields equivalent mutants that no test can kill and would only dilute the score.
+  const TYPE_LEVEL_LINE = /^\s*(?:(?:export\s+)?(?:declare\s+)?(?:type|interface)\b|\|)/;
+  const isTypeLevel = (index) => TYPE_LEVEL_LINE.test(source.slice(source.lastIndexOf('\n', index - 1) + 1, index));
   const regexAllowedAfter = /[(,=:[!&|?{};]$/;
   let last = '';
   let i = 0;
@@ -29,7 +33,7 @@ export function findMutations(source) {
       while (i < source.length && source[i] !== c) i += source[i] === '\\' ? 2 : 1;
       i++;
       const body = source.slice(start + 1, i - 1);
-      if (RULE_CODE.test(body)) add(start, i, `${c}MUTATED_${body}${c}`, 'rule-code');
+      if (RULE_CODE.test(body) && !isTypeLevel(start)) add(start, i, `${c}MUTATED_${body}${c}`, 'rule-code');
       last = c;
       continue;
     }
@@ -62,7 +66,9 @@ export function findMutations(source) {
     }
     const spaced = SPACED.find(([from]) => source.startsWith(from, i));
     if (spaced) {
-      add(i, i + spaced[0].length, spaced[1], 'operator');
+      // String concatenation only builds user-facing message text; arithmetic mutants stay in scope.
+      const concatenation = spaced[0] === ' + ' && (/['"`]$/.test(last) || /^['"`]/.test(source.slice(i + spaced[0].length)));
+      if (!concatenation) add(i, i + spaced[0].length, spaced[1], 'operator');
       i += spaced[0].length; last = spaced[0];
       continue;
     }

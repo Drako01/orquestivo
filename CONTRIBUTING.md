@@ -2,7 +2,7 @@
 
 **We welcome contributions! ¡Todas las contribuciones son bienvenidas!**
 
-Orquestivo is an open-source VS Code CI/CD studio developed by Alejandro Daniel Di Stefano. It is an **unreleased preview**, not an enterprise-certified product. We value testable improvements, accessibility, security and documentation as much as new features.
+Orquestivo is an open-source VS Code CI/CD studio developed by Alejandro Daniel Di Stefano. It is a pre-1.0 release, not an enterprise-certified product. We value testable improvements, accessibility, security and documentation as much as new features.
 
 **En español:** Podés contribuir con código, pruebas, documentación, traducciones ES/EN, revisión de seguridad, accesibilidad y experiencia de usuario. Abrí un issue antes de implementar cambios grandes, trabajá en una rama y enviá un PR con evidencia de pruebas. No es necesario tener experiencia avanzada para colaborar.
 
@@ -96,7 +96,7 @@ Conventional Commits: `<type>(<scope>): <subject>`, for example `feat(providers)
 - [ ] Confirm no secrets, tokens, proprietary workflows, private logs or generated files are included.
 - [ ] Describe limitations, risks, compatibility impacts and skipped tests.
 
-While the foundation remains in [PR #1](https://github.com/Drako01/orquestivo/pull/1), coordinate with the maintainer and propose changes against **`feat/mvp-foundation`**. Once merged, use **`main`**. GitHub rulesets require CI verification and may require maintainer review; maintainers handle approvals and merges. **Never force-push to protected branches or create release tags as part of a contribution.** Do not publish the extension.
+Open pull requests against **`main`**. GitHub rulesets require CI verification and may require maintainer review; the project has a single owner who approves and merges (see [docs/RELEASE.md](docs/RELEASE.md#ownership-model)). **Never force-push to protected branches or create release tags as part of a contribution.** Do not publish the extension.
 
 ## Reporting bugs and security issues
 

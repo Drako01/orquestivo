@@ -40,6 +40,7 @@ const STEPS = [
   { id: 'sha256', title: 'VSIX SHA-256 (write and verify)', cmd: script('vsix-checksum.mjs', 'write', 'orquestivo.vsix'), then: script('vsix-checksum.mjs', 'check', 'orquestivo.vsix'), inputs: ['orquestivo.vsix'], cache: false, needs: ['package'], report: 'sha256' },
   { id: 'sbom', title: 'SBOM (CycloneDX, offline)', cmd: script('sbom.mjs'), inputs: ['package-lock.json', 'package.json', 'scripts/sbom.mjs'], report: 'sbom' },
   { id: 'licenses', title: 'Production license audit', cmd: script('license-audit.mjs'), inputs: ['package-lock.json', 'scripts/license-policy.json', 'scripts/license-audit.mjs'], report: 'licenses' },
+  { id: 'governance', title: 'Release governance (environments and ruleset, needs GitHub API)', cmd: script('governance-check.mjs'), inputs: ['.github', 'scripts/governance-check.mjs'], cache: false, report: 'governance' },
   { id: 'audit', title: 'npm audit (production, needs network)', cmd: script('audit-deps.mjs'), inputs: ['package-lock.json'], cache: false, report: 'audit' },
 ];
 

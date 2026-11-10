@@ -11,7 +11,7 @@ Dependencies point inward: the VS Code layer depends on the core, never the reve
 | Path | Responsibility |
 | --- | --- |
 | `src/core/` | Provider-neutral contracts and pure logic: `CiProvider` (`provider.ts`), `PipelineModel` (`model.ts`), findings (`findings.ts`), job graph (`analysis/`), generator (`generation/`, façade `generator.ts`), evidence and intent evaluation (`evidence/`) |
-| `src/core/github/` | GitHub Actions provider: rule modules under `rules/` and the registry `GITHUB_RULES` (68 codes, see [docs/ANALYSIS.md](docs/ANALYSIS.md)) |
+| `src/core/github/` | GitHub Actions provider: rule modules under `rules/` and the registry `GITHUB_RULES` (69 codes, see [docs/ANALYSIS.md](docs/ANALYSIS.md)) |
 | `src/providers/` | GitLab CI, Azure Pipelines and Jenkins providers, `registry.ts` (`providerRegistry`, `detectProvider`) and `shared/` building blocks (rule catalog, bounded YAML analysis, cycle detection, text heuristics) |
 | `src/security/` | `redact.ts`, `safe-path.ts` (symlink-aware containment), `limits.ts` (bounded reads) |
 | `src/ai/` | Consent, disclosure, success-claim guard and provider contract. No network code and no SDK |

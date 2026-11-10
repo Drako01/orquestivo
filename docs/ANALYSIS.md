@@ -10,6 +10,13 @@ Orquestivo analyses workflows deterministically from their text. A static pass n
 - `src/core/github/provider.ts`: `githubActionsProvider` (`CiProvider`), including `model()` which maps a workflow to the provider-neutral `PipelineModel`.
 - `src/core/analysis/graph.ts`: `buildJobGraph(model)` (nodes with topological layer, edges) and `renderGraphText(graph)`, a textual alternative to any visual graph. Layering lives in `topology.ts` and is shared with the `NEEDS_CYCLE` rule.
 
+## Untrusted contexts (`EXPRESSION_IN_SCRIPT`)
+
+`src/core/github/untrusted.ts` is the single list of expression contexts an outside actor can influence. The rule checks every `${{ }}` in a step's `run` and in the `script` of `actions/github-script`, including expressions wrapped in functions (`format()`, `fromJSON()`) and bracket access (`github['event']['issue']['title']`).
+
+- Covered: `github.head_ref`, `github.ref_name`, `inputs.*`, and `github.event.{pull_request, pull_request_target, issue, comment, review, review_comment, discussion, pages, head_commit, commits, workflow_run, release, client_payload, inputs}.*`, except numeric ids and commit hashes.
+- Not covered (no data-flow): values copied through `steps.*.outputs`, `env` blocks consumed with an expression, or `needs.*.outputs`. `SECRET_ECHO` looks at one line at a time.
+
 ## Hostile input guards
 
 - Sources above 2,000,000 characters are rejected with `YAML_TOO_LARGE`.
@@ -23,7 +30,7 @@ Orquestivo analyses workflows deterministically from their text. A static pass n
 - `test/corpus/` + `manifest.json`: realistic good, bad and hostile workflows. `test/analyzer-corpus.test.cjs` asserts precision and recall of at least 0.9 per category and writes `analyzer-metrics.json` when `ORQUESTIVO_REPORT_DIR` is set.
 - `test/analyzer-perf.test.cjs`: a 2000-job workflow must analyse, model and graph within budget; timings go to `analyzer-perf.json` in the report directory.
 
-## Rule catalog (68 codes)
+## Rule catalog (69 codes)
 
 | Code | Severity | Category | Why it matters | Docs |
 |---|---|---|---|---|
@@ -81,6 +88,7 @@ Orquestivo analyses workflows deterministically from their text. A static pass n
 | `RUNNER_MISSING` | error | semantic | A job without runs-on cannot be scheduled. | [docs](https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions) |
 | `SECRET_ECHO` | warning | security | Printing a secret writes it to the log; masking is best-effort and defeated by transformations. | [docs](https://docs.github.com/actions/security-guides/security-hardening-for-github-actions) |
 | `SECRETS_INHERIT_REVIEW` | warning | security | secrets: inherit hands every secret to the called workflow. | [docs](https://docs.github.com/actions/using-workflows/reusing-workflows) |
+| `SELF_HOSTED_PR_REVIEW` | information | security | On a public repository, pull requests from forks can run code on a self-hosted runner and persist on your infrastructure. | [docs](https://docs.github.com/actions/hosting-your-own-runners/managing-self-hosted-runners/about-self-hosted-runners#self-hosted-runner-security) |
 | `SELF_HOSTED_PR_TARGET` | error | security | A privileged trigger on a self-hosted runner lets pull-request code persist on your infrastructure. | [docs](https://docs.github.com/actions/hosting-your-own-runners/managing-self-hosted-runners/about-self-hosted-runners#self-hosted-runner-security) |
 | `SERVICES_INVALID` | error | semantic | services must be a mapping of name to a definition with an image; ports, when present, must be a list. | [docs](https://docs.github.com/actions/using-containerized-services/about-service-containers) |
 | `SETUP_CACHE_MISSING` | information | performance | Reinstalling dependencies on every run slows CI and increases registry traffic. | [docs](https://docs.github.com/actions/using-workflows/caching-dependencies-to-speed-up-workflows) |

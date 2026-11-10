@@ -114,6 +114,8 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - name: Full release gate (strict, no cache)
         if: inputs.vsix_run_id == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: npm run verify:release
       - name: Reuse the verified VSIX of an earlier run (recovery)
         if: inputs.vsix_run_id != ''

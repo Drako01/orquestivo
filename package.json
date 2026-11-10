@@ -2,7 +2,7 @@
   "name": "orquestivo",
   "displayName": "Orquestivo",
   "description": "Design, inspect, and verify CI/CD workflows with evidence-backed diagnostics.",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "publisher": "armotusitio",
   "author": {
     "name": "Alejandro Daniel Di Stefano",
@@ -235,7 +235,8 @@
     "mutation": "node scripts/mutation/run.mjs",
     "sbom": "node scripts/sbom.mjs",
     "audit:licenses": "node scripts/license-audit.mjs",
-    "audit:vsix": "node scripts/vsix-audit.mjs"
+    "audit:vsix": "node scripts/vsix-audit.mjs",
+    "bench": "node scripts/build-tests.mjs && node scripts/bench-scan.mjs"
   },
   "dependencies": {
     "yaml": "2.9.1"

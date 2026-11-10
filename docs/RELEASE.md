@@ -1,6 +1,6 @@
 # Orquestivo release governance
 
-**Do not merge a release, create tags or publish before explicit maintainer approval.** Nothing in this repository publishes automatically.
+**Merging a version bump to `main` starts the publish workflow.** Every registry job then waits for the owner's approval on a protected Environment, so merge a release commit only when you are ready to approve it. Never create or move release tags by hand.
 
 The pipeline follows the Marketplace + Open VSX design used for Probato PR, with separate trusted-publishing registrations for Orquestivo.
 
@@ -14,13 +14,22 @@ The pipeline follows the Marketplace + Open VSX design used for Probato PR, with
 - No long-lived registry tokens in the workflow. Publishing uses OIDC trusted publishing (`vsce publish --oidc`, `ovsx publish --trusted-publishing`). If a registry does not support OIDC for this publisher, the fallback is a token stored as an **environment** secret (never repository-wide), added deliberately in a reviewed change.
 - Third-party actions are pinned to full commit SHAs; do not change a pin without verifying the new SHA upstream.
 
+## Ownership model
+
+Orquestivo has a single owner and maintainer. That has concrete consequences for every control below, and they are intentional:
+
+- The owner is the only person who can approve a pull request or use the ruleset bypass (repository role *Admin*, bypass mode *pull request only*) to merge it. A pull request is still required: nobody pushes directly to `main`.
+- `CODEOWNERS` names the owner for every path. Because an author cannot approve their own pull request, the owner merges through the bypass after the three `Verify` checks are green. Required checks are not skipped by the bypass in practice: merge only on green.
+- The three Environments name the owner as the required reviewer. The **self-review prevention option must stay off**; with a single owner it would make every release impossible. The control that remains is a deliberate, separate approval click per registry after the full gate.
+- If a second maintainer joins, switch on self-review prevention and add them to `CODEOWNERS` and to the Environment reviewers in the same change.
+
 ## `private: true` in `package.json`
 
 The flag was removed in the `0.1.1` release commit. `publish.yml` still fails in `authorize` if it is ever present again, so a private package can never be published by accident.
 
 ## One-time owner setup (not verifiable from the repository)
 
-1. Environments `marketplace`, `open-vsx`, `github-release`: required reviewers, deployment branches limited to `main`, no self-review.
+1. Environments `marketplace`, `open-vsx`, `github-release`: the owner as required reviewer, deployment branches limited to `main`, self-review prevention off (see the ownership model). `npm run verify:release` checks this through the GitHub API (step `governance`) and fails when a reviewer or branch policy is missing.
 2. Register OIDC trusted publishing for `Drako01/orquestivo`, workflow `publish.yml`, and the matching environment, in both registries. The Open VSX namespace must exist.
 3. Apply the rulesets in `.github/rulesets` (`npm run rulesets:check` validates them offline, `rulesets:status` reads the live state).
 
@@ -56,7 +65,25 @@ The two registries are independent jobs, so one can succeed while the other fail
 
 ## Rollback
 
-Registry versions cannot be overwritten. Unpublish or deprecate in the registry UI if needed, then ship a fixed patch version. Mark the GitHub Release as pre-release or edit its notes; tags are protected by `protect-release-tags.json` and must not be moved.
+Registry versions cannot be overwritten, so rolling back means moving users to a fixed version and warning the ones who stay.
+
+1. Decide whether the defect is a security problem (act at once) or a functional one (use the normal patch flow).
+2. Visual Studio Marketplace: in the publisher management page, *Unpublish* the bad version only if it is dangerous; otherwise leave it and publish the fixed patch, which becomes the default install. Marketplace users on auto-update receive the fix.
+3. Open VSX: use the registry's *deprecate* action (with a pointer to the fixed version) or ask the namespace owner to remove the version; then publish the patch.
+4. GitHub Release: edit the notes of the affected release with the warning and the fixed version, and mark it *pre-release* so it stops being "Latest". Tags are protected by `protect-release-tags.json` and must not be moved or deleted.
+5. Ship the fix as a new patch version through the full process above; `CHANGELOG.md` records what was withdrawn and why.
+6. Record the incident and the cause in `ENTERPRISE_AAAA_STATUS.md`.
+
+A rollback has not been exercised on a real registry yet. Rehearse steps 2 and 3 with a throwaway pre-release version before relying on them.
+
+## Governance check
+
+`npm run verify:release` includes a read-only step that calls the GitHub API (through `gh`, or `GH_TOKEN` in CI) and fails if:
+
+- an Environment used by `publish.yml` is missing, has no required reviewers or has no deployment branch policy;
+- the `Protect main` ruleset is missing, not active, or lacks the pull request and status check rules.
+
+If the API cannot be read the step is `BLOCKED`, never `PASS`. Secret scanning, push protection and Dependabot security updates are reported as evidence when the token can see them.
 
 ## Local dry run (no publication)
 

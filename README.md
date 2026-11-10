@@ -9,7 +9,7 @@
 
 <p align="center">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-7C8CF8">
-  <img alt="Status: preview" src="https://img.shields.io/badge/status-preview-14181D">
+  <img alt="Version 0.2.0" src="https://img.shields.io/badge/version-0.2.0-14181D">
   <img alt="Visual Studio Code 1.99+" src="https://img.shields.io/badge/VS_Code-1.99%2B-14181D">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178C6">
 </p>
@@ -29,7 +29,7 @@
 
 A pipeline can be valid YAML and still be **unsafe, fragile or incorrect for its intended purpose**. Orquestivo is an open-source, local-first VS Code extension that inspects CI/CD pipelines, checks them against what you say they must achieve, and generates conservative CI starting points.
 
-**Current status: public preview (`0.1.1`).** Published to the Visual Studio Marketplace and Open VSX as a preview. See [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md). Known gaps (real GitHub E2E, WSL/SSH/Dev Containers checks, manual accessibility audit) are tracked honestly in [RELEASE_READINESS.md](RELEASE_READINESS.md).
+**Current version: `0.2.0` (pre-1.0).** Published to the Visual Studio Marketplace and Open VSX. See [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md). Known gaps (real GitHub E2E, WSL/SSH/Dev Containers checks, manual accessibility audit) are tracked honestly in [RELEASE_READINESS.md](RELEASE_READINESS.md).
 
 Orquestivo reports **static inference** by default. It does not run your pipeline. Only opt-in, read-only evidence from real GitHub Actions runs can back a statement about what actually happened, and even then it does not prove business requirements are met.
 
@@ -37,7 +37,8 @@ Orquestivo reports **static inference** by default. It does not run your pipelin
 
 | Area | Capability |
 | --- | --- |
-| Multi-provider analysis | **GitHub Actions** (68 rule codes), **GitLab CI/CD**, **Azure Pipelines** and **Jenkins** (declarative Jenkinsfile). Rule details: [docs/ANALYSIS.md](docs/ANALYSIS.md), [docs/PROVIDERS.md](docs/PROVIDERS.md) |
+| Script-injection checks | Flags attacker-controlled values (`github.head_ref`, `inputs.*`, issue and pull request text, `workflow_run` data) interpolated into `run` scripts and `actions/github-script` programs, even inside `format()` or bracket access. Textual, no data-flow: see [docs/ANALYSIS.md](docs/ANALYSIS.md#untrusted-contexts-expression_in_script) |
+| Multi-provider analysis | **GitHub Actions** (69 rule codes), **GitLab CI/CD**, **Azure Pipelines** and **Jenkins** (declarative Jenkinsfile). Rule details: [docs/ANALYSIS.md](docs/ANALYSIS.md), [docs/PROVIDERS.md](docs/PROVIDERS.md) |
 | Control Center | Webview with an accessible pipeline diagram (with a textual alternative) and three explanation levels: **beginner**, **advanced**, **expert** |
 | Intent contracts | `.orquestivo/intent.json` states what the pipeline must achieve; each criterion yields **PASS / FAIL / WARN / SKIP / INCONCLUSIVE / BLOCKED**. See [docs/EVIDENCE.md](docs/EVIDENCE.md) |
 | Run evidence (opt-in) | Read-only GitHub Actions run metadata, with a token kept in VS Code **SecretStorage**. Off until you connect |
@@ -65,7 +66,7 @@ Diagnostics identify supported static patterns. A clean scan **does not mean** a
 
 ## Screenshots
 
-A look at Orquestivo. Images 1–3 are real VS Code captures from the earlier 0.1.0 preview; images 4–6 show the current Control Center, rendered from the product's own HTML (`src/ui`) with a real analysis of a sample workflow and a VS Code dark theme palette. They are not full VS Code window captures; regenerate them with `scripts/render-readme-media.mjs`. Click any image to open it at full resolution.
+A look at Orquestivo. Images 1–3 are real VS Code captures from the earlier 0.1.0 release; images 4–8 show the current Control Center, rendered from the product's own HTML (`src/ui`) with a real analysis of sample workflows and a VS Code dark theme palette. They are not full VS Code window captures; regenerate them with `scripts/render-readme-media.mjs`. Click any image to open it at full resolution.
 
 ### 1. Control Center — scan overview
 
@@ -133,11 +134,33 @@ Declare what the pipeline must guarantee in `.orquestivo/intent.json`. Each crit
 </p>
 <p align="center"><sub>Intención y evidencia · Veredictos con su base de evidencia</sub></p>
 
-> These images were captured from the earlier 0.1.0 preview (static analysis and a four-stack generator). They predate the multi-provider Control Center, the wizard and the evidence features described above, and they do not demonstrate execution, deployment or verification of a pipeline's intended outcome. New screenshots will be added only after they are captured from the real UI.
+### 7. Script-injection detection — untrusted values in scripts
+
+A pull request workflow that interpolates `github.head_ref`, a dispatch input and a pull request body into a shell script and a `github-script` program. Each occurrence is reported with its line, the exact untrusted value and the safe alternative (pass it through `env`); the self-hosted runner under `pull_request` is flagged as well. The *Security* category filter is applied.
+
+<p align="center">
+  <a href="media/07-injection-contexts.png">
+    <img src="media/07-injection-contexts.png" alt="Orquestivo Control Center filtered to the Security category showing three EXPRESSION_IN_SCRIPT warnings for github.head_ref, inputs.label and github.event.pull_request.body, plus a SELF_HOSTED_PR_REVIEW information finding." width="940" />
+  </a>
+</p>
+<p align="center"><sub>Seguridad · Valores no confiables interpolados en scripts</sub></p>
+
+### 8. Several CI providers in one scan
+
+GitHub Actions, GitLab CI/CD and Jenkins files analysed together: provider chips, severity and category counts across all files, and findings grouped by file.
+
+<p align="center">
+  <a href="media/08-multi-provider.png">
+    <img src="media/08-multi-provider.png" alt="Orquestivo Control Center showing three pipeline files from GitHub Actions, GitLab CI/CD and Jenkins with 1 error, 12 warnings and 8 information findings." width="940" />
+  </a>
+</p>
+<p align="center"><sub>Multi-proveedor · Un solo análisis para varios CI</sub></p>
+
+> Images 1–3 predate the multi-provider Control Center, the wizard diff preview and the evidence features. None of these images demonstrates execution, deployment or verification of a pipeline's intended outcome; the guided wizard and the Problems panel in a real VS Code window are covered by the integration suite rather than by a screenshot.
 
 ## Quick start
 
-### Try the development preview
+### Install
 
 Install **Orquestivo** (publisher `armotusitio`) from the Visual Studio Marketplace or Open VSX. To try a build from source instead, build the VSIX locally with `npm run package`.
 
@@ -146,7 +169,6 @@ Prerequisites: **VS Code 1.99+**, **Node.js 22+** and npm. For analysis, open a 
 ```bash
 git clone https://github.com/Drako01/orquestivo.git
 cd orquestivo
-git switch feat/mvp-foundation
 npm ci
 npm run package
 ```
@@ -159,7 +181,7 @@ In VS Code, select **Extensions → ··· → Install from VSIX…** and choose
 
 Step-by-step guides: [docs/USAGE.md](docs/USAGE.md). Problems: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
-If you install a preview artifact from CI, verify its build and source commit and the SHA-256 next to it. Preview packages are not production-certified releases.
+If you install a VSIX from a CI run or a GitHub Release, verify the SHA-256 next to it with `node scripts/vsix-checksum.mjs check orquestivo.vsix`. Orquestivo is not an enterprise-certified product.
 
 ## How to interpret findings
 
@@ -180,7 +202,8 @@ Verdict aggregation: `FAIL > BLOCKED > INCONCLUSIVE > WARN > SKIP > PASS`. An ag
 - **No bundled AI.** AI is off by default and the repository ships no network code or provider SDK for it. Suggestions are never evidence.
 - **Workspace Trust matters.** Analysis and generation require a trusted workspace; reads are bounded.
 - **Environments.** CI covers Linux (full gate and real VS Code), Windows and macOS (platform gate). WSL, Remote SSH, Dev Containers, multi-root and monorepos are not yet manually verified: [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
-- **Preview release.** Publication runs from `main` through [`publish.yml`](.github/workflows/publish.yml); OIDC trust and Environment protection are owner-side settings that cannot be verified from the repository.
+- **Static injection checks.** `EXPRESSION_IN_SCRIPT` follows a fixed list of untrusted contexts and does not track values copied through `steps.*.outputs` or `needs.*.outputs`. A clean scan is not a security guarantee.
+- **Single maintainer.** One owner approves pull requests and releases; each publish still needs a separate approval per registry on a protected Environment, and the release gate verifies that configuration ([docs/RELEASE.md](docs/RELEASE.md#ownership-model)). OIDC trust in the registries is registry-side and cannot be verified from the repository.
 
 Related: [Security](SECURITY.md), [Privacy](PRIVACY.md), [Threat model](docs/THREAT_MODEL.md), [Security audit](docs/SECURITY_AUDIT.md), [Architecture](ARCHITECTURE.md), [Roadmap](ROADMAP.md).
 
@@ -194,7 +217,8 @@ No telemetry. Nothing leaves your machine unless you opt in: connecting GitHub (
 npm ci
 npm run verify:fast        # typecheck, lint, unit tests (daily loop)
 npm run verify:enterprise  # full gate with per-step status and reports/
-npm run test:integration   # real VS Code Extension Host (downloads VS Code)
+npm run build && npm run test:integration   # real VS Code Extension Host (downloads VS Code)
+npm run bench              # scan latency baseline (see docs/TESTING.md)
 npm run package            # builds orquestivo.vsix
 ```
 

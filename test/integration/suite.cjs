@@ -78,5 +78,7 @@ exports.run = async function run() {
   assert.equal(config.get('ai.enabled'), false, 'AI must default to disabled');
   assert.equal(config.get('ui.experienceLevel'), 'beginner');
 
+  await require('./scenarios.cjs').runScenarios();
+
   // No arbitrary file writes, subprocess execution or GitHub calls are required for activation.
 };

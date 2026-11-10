@@ -10,6 +10,7 @@ const { githubActionsProvider } = require('../dist-test/core/github/provider.js'
 const { buildViewModel, NO_FILTERS } = require('../dist-test/ui/view-model.js');
 const { renderControlCenter } = require('../dist-test/ui/render.js');
 const { tr } = require('../dist-test/i18n.js');
+const { providerRegistry } = require('../dist-test/providers/registry.js');
 
 const outDir = resolve(process.argv[2] ?? 'media-render');
 mkdirSync(outDir, { recursive: true });
@@ -78,9 +79,71 @@ const base = {
 // Subset of the VS Code "Dark Modern" palette so the standalone page resembles the host.
 const theme = `:root{--vscode-font-family:"Segoe UI",system-ui,sans-serif;--vscode-font-size:13px;--vscode-foreground:#cccccc;--vscode-editor-background:#1f1f1f;--vscode-sideBar-background:#181818;--vscode-panel-border:#2b2b2b;--vscode-descriptionForeground:#9d9d9d;--vscode-button-background:#0078d4;--vscode-button-foreground:#ffffff;--vscode-button-hoverBackground:#026ec1;--vscode-button-secondaryBackground:#313131;--vscode-button-secondaryForeground:#cccccc;--vscode-button-secondaryHoverBackground:#3c3c3c;--vscode-dropdown-background:#313131;--vscode-dropdown-foreground:#cccccc;--vscode-dropdown-border:#3c3c3c;--vscode-focusBorder:#0078d4;--vscode-textLink-foreground:#4daafc;--vscode-textLink-activeForeground:#4daafc;--vscode-badge-background:#616161;--vscode-badge-foreground:#ffffff;--vscode-editorError-foreground:#f85149;--vscode-editorWarning-foreground:#cca700;--vscode-editorInfo-foreground:#3794ff;--vscode-testing-iconPassed:#73c991;--vscode-textCodeBlock-background:#2b2b2b;--vscode-textBlockQuote-background:#222222;--vscode-editor-font-family:Consolas,monospace}body{margin:0}`;
 
+/** Builds one scan entry through the provider that owns `path`, exactly as the extension does. */
+function entryFor(id, path, source) {
+  const provider = providerRegistry.detectProvider(path);
+  const analysis = provider.analyze(source);
+  return {
+    id, providerName: provider.displayName, model: provider.model(source),
+    result: { path, uri: 'file:///' + path, provider: provider.id, findings: analysis.findings, syntaxValid: analysis.syntaxValid, executionVerified: false },
+  };
+}
+
+const injectionWorkflow = `name: Triage
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      label:
+        type: string
+permissions:
+  contents: read
+jobs:
+  triage:
+    runs-on: [self-hosted, linux]
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        with:
+          persist-credentials: false
+      - run: git checkout \${{ github.head_ref }}
+      - run: echo "Label \${{ inputs.label }}"
+      - uses: actions/github-script@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        with:
+          script: core.info("\${{ github.event.pull_request.body }}")
+`;
+const gitlabPipeline = `stages: [test, deploy]
+test:
+  stage: test
+  image: node:latest
+  script:
+    - npm ci
+    - npm test
+deploy:
+  stage: deploy
+  script:
+    - ./deploy.sh
+`;
+const jenkinsfile = `pipeline {
+  agent any
+  stages {
+    stage('Build') { steps { sh 'make build' } }
+    stage('Test') { steps { sh 'make test' } }
+  }
+}
+`;
+
 const scenes = {
   '04-pipeline-diagram': { ...base, level: 'advanced' },
   '05-intent-verdicts': { ...base, level: 'advanced', intent: { status: 'ready', contract } },
+  '07-injection-contexts': {
+    ...base, level: 'advanced', filters: { severities: new Set(), categories: new Set(['security']) },
+    files: [entryFor(0, '.github/workflows/triage.yml', injectionWorkflow)],
+  },
+  '08-multi-provider': {
+    ...base, level: 'advanced',
+    files: [file, entryFor(1, '.gitlab-ci.yml', gitlabPipeline), entryFor(2, 'Jenkinsfile', jenkinsfile)],
+  },
   '06-beginner-security': { ...base, level: 'beginner', filters: { severities: new Set(), categories: new Set(['security']) } },
 };
 for (const [name, input] of Object.entries(scenes)) {
@@ -88,5 +151,5 @@ for (const [name, input] of Object.entries(scenes)) {
     nonce, cspSource: "'self'", language: 'en', logoUri, t: (key, params) => tr(key, 'en', params),
   }).replace('</head>', `<style nonce="${nonce}">${theme}</style></head>`);
   writeFileSync(join(outDir, `${name}.html`), html, 'utf8');
-  console.log(name, analysis.findings.length + ' findings');
+  console.log(name, input.files.reduce((n, f) => n + f.result.findings.length, 0) + ' findings');
 }
