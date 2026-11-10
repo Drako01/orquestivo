@@ -252,3 +252,6 @@ Distributed under the **MIT License**. See [LICENSE](LICENSE).
   <strong>Designed and developed by Alejandro Daniel Di Stefano</strong><br />
   © 2026 <a href="https://armotusitio.com.ar">ArmoTuSitio</a> · Open source under the MIT License
 </p>
+
+
+Release checks run only on PR; after merging to `main`, publish reuses the exact CI-tested VSIX with source-tree provenance and SHA-256, no rerun. See [docs/RELEASE.md](docs/RELEASE.md).

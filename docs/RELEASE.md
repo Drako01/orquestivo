@@ -7,8 +7,8 @@ The pipeline follows the Marketplace + Open VSX design used for Probato PR, with
 ## Principles
 
 - Triggers: `.github/workflows/publish.yml` runs on a push to `main` (it publishes only when `package.json` holds a version with no GitHub Release yet) or on a manual `workflow_dispatch` (recovery). No PR, tag or schedule triggers. The Environments only accept deployments from `main`.
-- Confirmation: a manual dispatch needs `confirmation = PUBLISH_ORQUESTIVO`, the exact `version`, and must run from `main`. A push to `main` relies on the owner's merge (pull request, three green `Verify` checks) as the human gate, and on the full strict gate that `publish.yml` re-runs on the merged commit before anything is published.
-- One artifact: a single VSIX is built and verified once (`package` job), uploaded as artifact `vsix`, and both registries and the GitHub Release receive that same file. Every consumer re-checks its SHA-256 against the value produced by the `package` job.
+- Confirmation: a manual dispatch needs `confirmation = PUBLISH_ORQUESTIVO`, the exact `version`, and must run from `main`. A push to `main` relies on the owner's merge (pull request, three green `Verify` checks) as the human gate, and on successful pre-merge checks; `publish.yml` verifies artifact provenance and SHA-256 but never repeats tests or builds.
+- One artifact: the PR's preview job builds, audits, smoke-tests and checksums one VSIX, recording the PR head, CI run, Git source tree, version and SHA-256. When merged, `publish.yml` retrieves that exact artifact from a successful PR CI run and verifies the merged Git tree and SHA-256 before distributing unchanged bytes to both registries and GitHub Release. No checks or rebuilds run on main.
 - Least privilege: workflow-level `permissions: {}`; each job declares only what it needs. `id-token: write` exists only in the two publish jobs, `contents: write` only in `release`.
 - Protected environments gate every side effect: `marketplace`, `open-vsx`, `github-release`.
 - No long-lived registry tokens in the workflow. Publishing uses OIDC trusted publishing (`vsce publish --oidc`, `ovsx publish --trusted-publishing`). If a registry does not support OIDC for this publisher, the fallback is a token stored as an **environment** secret (never repository-wide), added deliberately in a reviewed change.
@@ -33,11 +33,19 @@ The flag was removed in the `0.1.1` release commit. `publish.yml` still fails in
 2. Register OIDC trusted publishing for `Drako01/orquestivo`, workflow `publish.yml`, and the matching environment, in both registries. The Open VSX namespace must exist.
 3. Apply the rulesets in `.github/rulesets` (`npm run rulesets:check` validates them offline, `rulesets:status` reads the live state).
 
+## Single-validation release policy (mandatory)
+
+1. `.github/workflows/ci.yml` runs **only on pull requests to `main`**. Its required Ubuntu, Windows and macOS checks, mutation testing, and packaged VSIX integration smoke finish before merge.
+2. The PR CI publishes `orquestivo-preview-vsix` and Linux verification reports. The preview artifact contains `reports/pr-preview-provenance.json` (PR number, PR head SHA, CI run ID, checked-out Git tree SHA, version, VSIX SHA-256).
+3. Merging a release PR automatically triggers `publish.yml`. The release job resolves the merged PR, requires a **successful pre-merge CI run on the identical PR head**, downloads its already-tested VSIX, compares its Git tree SHA with the exact `main` tree and checks the binary's SHA-256 and version. It does not run tests, lint, mutation, coverage, TypeScript, build or packaging again.
+4. Missing/expired artifact, missing CI success, a different Git tree or a checksum mismatch **block publication without re-running checks**. Do not bypass: update the PR and validate before merge, or create a new release PR if a merge already occurred.
+5. Explicit partial-publish recovery reuses an earlier publish run's unchanged VSIX and archived reports. It still verifies provenance. Registry credentials, OIDC availability and storefront propagation are separate publication dependencies, not code checks.
+
 ## Release checklist
 
 1. Feature, security, privacy, accessibility and i18n acceptance complete (`ENTERPRISE_AAAA_STATUS.md`).
 2. Version bumped (SemVer) and `CHANGELOG.md` has a `## [x.y.z]` entry.
-3. `npm run verify:release` is green locally or in CI on the exact head: typecheck, lint, tests, rulesets, coverage thresholds, mutation floor, performance budgets, production build, VSIX package + content audit + SHA-256, SBOM, license audit, `npm audit`. `BLOCKED` or `INCONCLUSIVE` is not a pass.
+3. the strict PR CI enterprise verification is green on the exact head: typecheck, lint, tests, rulesets, coverage thresholds, mutation floor, performance budgets, production build, VSIX package + content audit + SHA-256, SBOM, license audit, `npm audit`. `BLOCKED` or `INCONCLUSIVE` is not a pass.
 4. CI is green on the exact head for Linux, Windows and macOS, and the preview VSIX was exercised in a real VS Code.
 5. Maintainer approval recorded; `"private": true` removed in the release commit; merged to `main` by the owner.
 6. Merging to `main` starts **publish** and it runs to the end without further approval. To recover a partial publish, use `Actions > publish > Run workflow`: `confirmation`, `version`, a single `registries` value and the `vsix_run_id` of the earlier run.
@@ -58,7 +66,7 @@ The two registries are independent jobs, so one can succeed while the other fail
 
 1. Do not delete or re-version what was already published (registry versions are immutable).
 2. Note the run id of the failed run (it holds the `vsix` artifact, retention 90 days).
-3. Re-dispatch with `registries` set to the failed registry only and `vsix_run_id` set to that run id. The workflow downloads the original VSIX, re-audits it and re-checks its SHA-256 instead of rebuilding, so both registries end up with byte-identical packages.
+3. Re-dispatch with `registries` set to the failed registry only and `vsix_run_id` set to that run id. The workflow downloads the original VSIX, rechecks provenance and SHA-256 instead of rebuilding, so both registries end up with byte-identical packages.
 4. `--skip-duplicate` makes a repeated Marketplace publish idempotent; the Open VSX script tolerates "already published".
 5. When the retry succeeds, the `release` job creates the GitHub Release (it only requires at least one successful registry and no failed one).
 6. If the defect is in the package itself, publish a new patch version through the full process.

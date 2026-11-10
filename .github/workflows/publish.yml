@@ -1,7 +1,7 @@
 # Release pipeline. Triggers: a push to main (only publishes when package.json holds a version that has no
 # GitHub Release yet) or a manual dispatch (recovery / explicit confirmation). Merging the release to main is the
-# approval: the registry jobs run on their Environments without a reviewer gate, which only accept deployments
-# from main. No PR, tag or scheduled triggers.
+# approval: publication reuses the exact successful pre-merge CI artifact and reports; no tests/rebuild on main.
+# Registry Environments accept deployments from main only. No PR, tag or scheduled triggers.
 # See docs/RELEASE.md for the release checklist, environment setup and partial-publish recovery.
 name: publish
 on:
@@ -71,35 +71,13 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "publish=true" >> "$GITHUB_OUTPUT"
 
-  verify-platforms:
-    name: Verify (${{ matrix.os }})
-    needs: authorize
-    if: needs.authorize.outputs.publish == 'true'
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 25
-    permissions:
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest, macos-latest]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 22
-      - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npm run verify:platform
-
   package:
-    # Builds, fully verifies (strict, no cache) and packages the ONE VSIX that both marketplaces receive.
-    name: Verify and package VSIX
+    # Reuse the already tested PR VSIX. Never re-run quality checks or rebuild after merge.
+    name: Reuse verified PR VSIX
     needs: authorize
     if: needs.authorize.outputs.publish == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 15
     permissions:
       contents: read
       actions: read
@@ -112,50 +90,69 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
-      - run: npm ci --no-audit --no-fund
-      - name: Full release gate (strict, no cache)
+      - name: Locate successful PR checks for this exact merge
+        id: approved
         if: inputs.vsix_run_id == ''
         env:
           GH_TOKEN: ${{ github.token }}
-        run: npm run verify:release
-      - name: Reuse the verified VSIX of an earlier run (recovery)
+        run: node scripts/release-provenance.mjs resolve
+      - name: Download PR-tested VSIX without rebuilding
+        if: inputs.vsix_run_id == ''
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: orquestivo-preview-vsix
+          run-id: ${{ steps.approved.outputs.run_id }}
+          github-token: ${{ github.token }}
+      - name: Download original release VSIX for manual recovery
         if: inputs.vsix_run_id != ''
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: vsix
           run-id: ${{ inputs.vsix_run_id }}
           github-token: ${{ github.token }}
-      - name: Audit VSIX and verify checksum
+      - name: Validate successful CI, merged tree, version and VSIX SHA-256
         id: checksum
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          npm run audit:vsix
+          node scripts/release-provenance.mjs verify
           node scripts/vsix-checksum.mjs check orquestivo.vsix
           echo "sha256=$(cut -d' ' -f1 orquestivo.vsix.sha256)" >> "$GITHUB_OUTPUT"
-      - name: Generate SBOM
-        run: npm run sbom
+      - name: Download original Ubuntu pre-merge verification reports
+        if: inputs.vsix_run_id == ''
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: verify-reports-Linux
+          run-id: ${{ steps.approved.outputs.run_id }}
+          path: evidence
+          github-token: ${{ github.token }}
+      - name: Restore release evidence during manual recovery
+        if: inputs.vsix_run_id != ''
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-evidence
+          run-id: ${{ inputs.vsix_run_id }}
+          path: evidence
+          github-token: ${{ github.token }}
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: vsix
           path: |
             orquestivo.vsix
             orquestivo.vsix.sha256
+            reports/pr-preview-provenance.json
           if-no-files-found: error
           retention-days: 90
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-evidence
-          path: |
-            reports/verify-enterprise.json
-            reports/verify-enterprise.md
-            reports/sbom.cdx.json
-            reports/mutation.json
-            reports/coverage/summary.json
-          if-no-files-found: warn
+          path: evidence/
+          if-no-files-found: error
           retention-days: 90
 
   marketplace:
     name: Publish to Visual Studio Marketplace
-    needs: [authorize, verify-platforms, package]
+    needs: [authorize, package]
     if: needs.authorize.outputs.publish == 'true' && (github.event_name == 'push' || inputs.registries == 'both' || inputs.registries == 'marketplace')
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -188,7 +185,7 @@ jobs:
 
   open-vsx:
     name: Publish to Open VSX
-    needs: [authorize, verify-platforms, package]
+    needs: [authorize, package]
     if: needs.authorize.outputs.publish == 'true' && (github.event_name == 'push' || inputs.registries == 'both' || inputs.registries == 'open-vsx')
     runs-on: ubuntu-latest
     timeout-minutes: 30

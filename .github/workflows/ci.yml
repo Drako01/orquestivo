@@ -2,8 +2,6 @@ name: CI
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
 permissions:
   contents: read
 concurrency:
@@ -86,12 +84,18 @@ jobs:
         run: |
           node scripts/vsix-checksum.mjs write orquestivo.vsix
           node scripts/vsix-checksum.mjs check orquestivo.vsix
+      - name: Stamp PR CI source and artifact digest
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/release-provenance.mjs stamp
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: orquestivo-preview-vsix
           path: |
             orquestivo.vsix
             orquestivo.vsix.sha256
+            reports/pr-preview-provenance.json
             reports/steps/vsix-audit.json
           if-no-files-found: error
           retention-days: 14

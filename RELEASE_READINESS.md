@@ -1,6 +1,8 @@
 # Orquestivo — Enterprise AAAA readiness
 
 ## Decision
+**Release policy:** the three required OS checks and packaged VSIX smoke run only before merge. Publishing reuses the exact PR-tested binary and requires matching Git tree, version, run identity and SHA-256; no code tests run after merging to `main` (see `docs/RELEASE.md`).
+
 
 **READY_WITH_RISKS** for the `0.2.0` release. Versions `0.1.0` to `0.1.2` are already published. Open items are recorded as **BLOCKED_BY_EXTERNAL_DEPENDENCY** (real GitHub end-to-end, WSL/SSH/Dev Containers manual runs, registry-side OIDC registration) or listed below as unchecked. This is a decision about the repository, not a certification.
 
@@ -42,7 +44,7 @@ How to read this file: `[x]` means the capability or check exists in the reposit
 - [x] SBOM, license audit, VSIX content audit and SHA-256 scripts — `scripts/sbom.mjs`, `license-audit.mjs`, `vsix-audit.mjs`, `vsix-checksum.mjs`
 - [x] CI matrix Linux (full gate + real VS Code smoke), Windows and macOS (platform gate) defined — `.github/workflows/ci.yml`, `docs/COMPATIBILITY.md`
 - [ ] Green CI on the exact final head for all three operating systems — REQUIRED EACH CHANGE; pending for `0.2.0` until the pull request runs
-- [ ] Green `npm run verify:release` (strict, no cache) on the exact final head — the non-strict enterprise gate is green locally; the strict run happens in the publish workflow
+- [ ] Green strict enterprise verification and packaged VSIX integration on the exact PR head — the non-strict enterprise gate is green locally; the strict gate executes in the PR, never after merging to main
 - [x] Mutation score at or above floor on a recorded run — 12 modules, `reports/mutation.json` (2026-11-10)
 - [ ] Measured performance and memory on large monorepos
 - [ ] Packaged VSIX E2E on Windows and macOS
@@ -55,7 +57,7 @@ How to read this file: `[x]` means the capability or check exists in the reposit
 - [x] Static analysis executes no repository commands and makes no network calls — design in `docs/THREAT_MODEL.md`; connector and AI are opt-in
 - [x] No telemetry, AI disabled by default, no bundled AI provider — `PRIVACY.md`, `src/ai/`
 - [x] Versioned rulesets and CODEOWNERS; drift checker — `.github/rulesets/`, `scripts/rulesets.mjs`, `test/rulesets.test.cjs`
-- [x] Publish workflow with SHA-pinned actions, least-privilege permissions, a `private: true` guard and automatic publication after the merge to `main` — `.github/workflows/publish.yml`, `docs/RELEASE.md`
+- [x] Publish workflow with SHA-pinned actions, least-privilege permissions, a `private: true` guard and automatic publication after merging to `main`, reusing the provenance-checked PR VSIX without repeating checks — `.github/workflows/publish.yml`, `docs/RELEASE.md`
 - [x] SecretStorage token handling and webview CSP re-audited on the shipped UI — `docs/SECURITY_AUDIT.md` (2026-11-10), real-host scenarios in `test/integration/scenarios.cjs`
 - [x] Rulesets active on the live repository — checked on every release gate by `scripts/governance-check.mjs`; `npm run rulesets:status` reports drift against `.github/rulesets/`
 - [x] Protected environments `marketplace`, `open-vsx`, `github-release` (`main`-only deployments, no reviewer gate by design) — `scripts/governance-check.mjs`
