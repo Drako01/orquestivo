@@ -1,7 +1,8 @@
 # Release pipeline. Triggers: a push to main (only publishes when package.json holds a version that has no
-# GitHub Release yet) or a manual dispatch (recovery / explicit confirmation). Every registry job still waits
-# for approval on its protected Environment. No PR, tag or scheduled triggers.
-# See docs/RELEASE.md for the approval checklist, environment setup and partial-publish recovery.
+# GitHub Release yet) or a manual dispatch (recovery / explicit confirmation). Merging the release to main is the
+# approval: the registry jobs run on their Environments without a reviewer gate, which only accept deployments
+# from main. No PR, tag or scheduled triggers.
+# See docs/RELEASE.md for the release checklist, environment setup and partial-publish recovery.
 name: publish
 on:
   push:
@@ -158,7 +159,7 @@ jobs:
     if: needs.authorize.outputs.publish == 'true' && (github.event_name == 'push' || inputs.registries == 'both' || inputs.registries == 'marketplace')
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # Protected environment: required reviewers, deployment branch limited to main, OIDC trust registered
+    # Environment: deployment branch limited to main (no reviewer gate), OIDC trust registered
     # for this repository and workflow. Never fall back to a long-lived token silently.
     environment: marketplace
     permissions:

@@ -1,13 +1,13 @@
 # Orquestivo release governance
 
-**Merging a version bump to `main` starts the publish workflow.** Every registry job then waits for the owner's approval on a protected Environment, so merge a release commit only when you are ready to approve it. Never create or move release tags by hand.
+**Merging a version bump to `main` publishes the release.** There is no second approval: the registry jobs run on their Environments without a reviewer gate, so the merge is the release decision. Merge a release commit only when you want it published now. Never create or move release tags by hand.
 
 The pipeline follows the Marketplace + Open VSX design used for Probato PR, with separate trusted-publishing registrations for Orquestivo.
 
 ## Principles
 
-- Triggers: `.github/workflows/publish.yml` runs on a push to `main` (it publishes only when `package.json` holds a version with no GitHub Release yet) or on a manual `workflow_dispatch` (recovery). No PR, tag or schedule triggers. Each registry job still waits for approval on its protected Environment.
-- Confirmation: a manual dispatch needs `confirmation = PUBLISH_ORQUESTIVO`, the exact `version`, and must run from `main`. A push to `main` relies on the Environment reviewers as the human gate.
+- Triggers: `.github/workflows/publish.yml` runs on a push to `main` (it publishes only when `package.json` holds a version with no GitHub Release yet) or on a manual `workflow_dispatch` (recovery). No PR, tag or schedule triggers. The Environments only accept deployments from `main`.
+- Confirmation: a manual dispatch needs `confirmation = PUBLISH_ORQUESTIVO`, the exact `version`, and must run from `main`. A push to `main` relies on the owner's merge (pull request, three green `Verify` checks) as the human gate, and on the full strict gate that `publish.yml` re-runs on the merged commit before anything is published.
 - One artifact: a single VSIX is built and verified once (`package` job), uploaded as artifact `vsix`, and both registries and the GitHub Release receive that same file. Every consumer re-checks its SHA-256 against the value produced by the `package` job.
 - Least privilege: workflow-level `permissions: {}`; each job declares only what it needs. `id-token: write` exists only in the two publish jobs, `contents: write` only in `release`.
 - Protected environments gate every side effect: `marketplace`, `open-vsx`, `github-release`.
@@ -20,8 +20,8 @@ Orquestivo has a single owner and maintainer. That has concrete consequences for
 
 - The owner is the only person who can approve a pull request or use the ruleset bypass (repository role *Admin*, bypass mode *pull request only*) to merge it. A pull request is still required: nobody pushes directly to `main`.
 - `CODEOWNERS` names the owner for every path. Because an author cannot approve their own pull request, the owner merges through the bypass after the three `Verify` checks are green. Required checks are not skipped by the bypass in practice: merge only on green.
-- The three Environments name the owner as the required reviewer. The **self-review prevention option must stay off**; with a single owner it would make every release impossible. The control that remains is a deliberate, separate approval click per registry after the full gate.
-- If a second maintainer joins, switch on self-review prevention and add them to `CODEOWNERS` and to the Environment reviewers in the same change.
+- The owner chose automatic publication: the three Environments have **no required reviewer**, because a reviewer who is also the only owner adds a click, not a control. What stands between a merge and a publication is the pull request, the three required `Verify` checks, the strict gate re-run in `publish.yml` (including the governance check) and the `main`-only deployment policy.
+- If a second maintainer joins, add them to `CODEOWNERS` and to the Environment reviewers, and switch on self-review prevention, in the same change.
 
 ## `private: true` in `package.json`
 
@@ -29,7 +29,7 @@ The flag was removed in the `0.1.1` release commit. `publish.yml` still fails in
 
 ## One-time owner setup (not verifiable from the repository)
 
-1. Environments `marketplace`, `open-vsx`, `github-release`: the owner as required reviewer, deployment branches limited to `main`, self-review prevention off (see the ownership model). `npm run verify:release` checks this through the GitHub API (step `governance`) and fails when a reviewer or branch policy is missing.
+1. Environments `marketplace`, `open-vsx`, `github-release`: deployment branches limited to `main`, no required reviewer (publication is automatic; see the ownership model). `npm run verify:release` checks the branch policy through the GitHub API (step `governance`) and fails when it is missing.
 2. Register OIDC trusted publishing for `Drako01/orquestivo`, workflow `publish.yml`, and the matching environment, in both registries. The Open VSX namespace must exist.
 3. Apply the rulesets in `.github/rulesets` (`npm run rulesets:check` validates them offline, `rulesets:status` reads the live state).
 
@@ -40,8 +40,8 @@ The flag was removed in the `0.1.1` release commit. `publish.yml` still fails in
 3. `npm run verify:release` is green locally or in CI on the exact head: typecheck, lint, tests, rulesets, coverage thresholds, mutation floor, performance budgets, production build, VSIX package + content audit + SHA-256, SBOM, license audit, `npm audit`. `BLOCKED` or `INCONCLUSIVE` is not a pass.
 4. CI is green on the exact head for Linux, Windows and macOS, and the preview VSIX was exercised in a real VS Code.
 5. Maintainer approval recorded; `"private": true` removed in the release commit; merged to `main` by the owner.
-6. Merging to `main` starts **publish** by itself; approve the `marketplace`, `open-vsx` and `github-release` Environments when prompted. To recover a partial publish, use `Actions > publish > Run workflow`: `confirmation`, `version`, a single `registries` value and the `vsix_run_id` of the earlier run.
-7. Approve the `marketplace` and `open-vsx` deployments.
+6. Merging to `main` starts **publish** and it runs to the end without further approval. To recover a partial publish, use `Actions > publish > Run workflow`: `confirmation`, `version`, a single `registries` value and the `vsix_run_id` of the earlier run.
+7. Watch the run: the strict gate, both registry jobs and the GitHub Release must finish green.
 8. Check actual visibility: the workflow polls the Marketplace gallery (`scripts/check-marketplace.mjs`); Open VSX activation can lag and is reported separately. A green workflow is not proof of a live listing; open both listings.
 9. The `release` job creates tag `vX.Y.Z` and the GitHub Release with the VSIX, its `.sha256`, the SBOM and the verification report, then downloads the released asset and re-verifies the checksum.
 
@@ -80,7 +80,7 @@ A rollback has not been exercised on a real registry yet. Rehearse steps 2 and 3
 
 `npm run verify:release` includes a read-only step that calls the GitHub API (through `gh`, or `GH_TOKEN` in CI) and fails if:
 
-- an Environment used by `publish.yml` is missing, has no required reviewers or has no deployment branch policy;
+- an Environment used by `publish.yml` is missing or has no deployment branch policy (anything other than `main` could publish);
 - the `Protect main` ruleset is missing, not active, or lacks the pull request and status check rules.
 
 If the API cannot be read the step is `BLOCKED`, never `PASS`. Secret scanning, push protection and Dependabot security updates are reported as evidence when the token can see them.

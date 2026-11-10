@@ -53,7 +53,7 @@ the row when that file changes. Threat decisions live in [THREAT_MODEL.md](THREA
 | S-05 | Actions pinned by SHA, minimal permissions | PASS | `ci.yml`, `publish.yml`; `persist-credentials: false` on every checkout |
 | S-06 | VSIX content policy and secret scan | PASS | `scripts/vsix-audit.mjs`, `scripts/vsix-policy.json` |
 | S-07 | Same VSIX for both registries, SHA-256 verified | PASS | `publish.yml`; exercised by the `0.1.2` release |
-| S-08 | Protected environments and branch policy configured | PASS | Checked on every `verify:release` by `scripts/governance-check.mjs` through the GitHub API |
+| S-08 | Environments restricted to `main` (no reviewer gate by design: publication is automatic after the merge) | PASS | Checked on every `verify:release` by `scripts/governance-check.mjs` through the GitHub API |
 | S-09 | OIDC trusted publishing registered in both registries | INCONCLUSIVE | Owner-side registry settings; not visible from the repository |
 | S-10 | Secret scanning, push protection and Dependabot security updates | PASS | Enabled on the repository (reported by the governance step when the token can see them) |
 

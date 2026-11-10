@@ -65,13 +65,13 @@ Actors: a malicious repository author, a compromised dependency or action, a net
 | Malicious or vulnerable dependency | Exact versions, committed `package-lock.json`, `npm ci`, `npm audit --omit=dev` in the gate (offline outage = BLOCKED, not PASS), single runtime dependency bundled by esbuild, license allowlist (`scripts/license-policy.json`). |
 | Compromised action | Third-party actions pinned to full commit SHAs, `persist-credentials: false`, least-privilege `permissions`. |
 | Tampered package | One VSIX built and verified once; SHA-256 recorded and re-verified by each publish job and after the GitHub Release upload; content audit blocks sources, tests, secrets and dev files (`scripts/vsix-policy.json`). |
-| Stolen publish credentials | OIDC trusted publishing, no long-lived tokens by default, protected environments with the owner as required reviewer and a `main`-only deployment policy (verified on every release gate by `scripts/governance-check.mjs`), manual dispatch with explicit confirmation. |
+| Stolen publish credentials | OIDC trusted publishing, no long-lived tokens by default, Environments with a `main`-only deployment policy (verified on every release gate by `scripts/governance-check.mjs`), protected `main` (pull request and three required checks), strict gate re-run before publishing, manual dispatch with explicit confirmation. There is no reviewer gate on the Environments: publication is automatic after the merge. |
 | Unknown composition | CycloneDX SBOM generated from the lockfile for every enterprise run and attached to the release. |
 | Unverifiable provenance | Build provenance attestation is not yet enabled; tracked as a roadmap item and not claimed. |
 
 ## 6. Residual risks and non-goals
 
-- The project has a single owner, so pull request review is not independent; the compensating controls are the three required status checks, the full gate re-run on `main` before publishing, and a separate approval per registry ([docs/RELEASE.md](RELEASE.md#ownership-model)).
+- The project has a single owner, so pull request review is not independent; the compensating controls are the three required status checks, the full gate re-run on `main` before publishing, and the `main`-only deployment policy. Publication is automatic after the merge, so anyone able to merge to `main` (today only the owner, through the ruleset bypass) can publish; protecting the owner account (2FA, recovery codes) is part of the control ([docs/RELEASE.md](RELEASE.md#ownership-model)).
 - Script injection detection is textual: values copied through `steps.*.outputs` or `needs.*.outputs` are not tracked.
 
 - A user who explicitly approves a future execution adapter accepts the risk of running that command.

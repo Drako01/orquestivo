@@ -6,7 +6,7 @@ Format follows Keep a Changelog; versions follow SemVer.
 
 - `0.1.0` was uploaded manually to both registries as the first preview. This work is released as **`0.1.1`** (the owner chose a patch-level bump); the registries do not allow re-publishing an existing version.
 - `0.2.0` is a minor release: it widens what the analyzer reports and tightens release controls, without removing or renaming any command, setting or rule code.
-- Publication is automatic from `main`: a merge that changes `package.json` to a version without a GitHub Release starts [`publish.yml`](.github/workflows/publish.yml), and each registry job waits for approval on its protected Environment ([docs/RELEASE.md](docs/RELEASE.md)).
+- Publication is automatic from `main`: a merge that changes `package.json` to a version without a GitHub Release starts [`publish.yml`](.github/workflows/publish.yml) and runs to the end without a second approval: the merge is the release decision ([docs/RELEASE.md](docs/RELEASE.md)).
 
 ## [Unreleased]
 
@@ -17,7 +17,7 @@ _Nothing yet._
 ### Added
 - Script-injection detection now uses one list of untrusted contexts (`src/core/github/untrusted.ts`). `EXPRESSION_IN_SCRIPT` also reports `github.head_ref`, `github.ref_name`, `inputs.*`, `github.event.inputs.*` and the `workflow_run`, `review`, `review_comment`, `discussion`, `pages`, `release` and `client_payload` event objects, including expressions wrapped in `format()` or `fromJSON()` and bracket access, and scans the `script` of `actions/github-script`. Numeric ids and commit hashes are not reported. Limits are documented in [docs/ANALYSIS.md](docs/ANALYSIS.md).
 - New rule `SELF_HOSTED_PR_REVIEW` (information): a self-hosted runner under `pull_request`. The catalog now has 69 codes.
-- Release governance check (`scripts/governance-check.mjs`, step `governance` of the enterprise gate): fails when a publish Environment has no required reviewer or deployment branch policy, or when the `Protect main` ruleset is missing or weakened.
+- Release governance check (`scripts/governance-check.mjs`, step `governance` of the enterprise gate): fails when a publish Environment has no `main`-only deployment branch policy, or when the `Protect main` ruleset is missing or weakened.
 - Integration scenarios in a real VS Code: wizard create and undo, refusal to write through a link that leaves the workspace, analyzer diagnostics, GitHub connector with a simulated network, `openFinding` argument validation and the offline AI helper.
 - `npm run bench` scan benchmark and a documented baseline in [docs/TESTING.md](docs/TESTING.md).
 - Tests that keep the documentation honest: the rule catalog and counts must match the code (`test/docs-sync.test.cjs`), and security helpers must be wired into the paths they protect (`test/architecture-guards.test.cjs`).
@@ -30,7 +30,7 @@ _Nothing yet._
 - `docs/SECURITY_AUDIT.md`, `docs/THREAT_MODEL.md`, `docs/RELEASE.md`, `RELEASE_READINESS.md` and `ENTERPRISE_AAAA_STATUS.md` rewritten to match the code; the single-owner approval model and the rollback procedure are now documented.
 
 ### Security
-- Repository settings: the `marketplace`, `open-vsx` and `github-release` Environments now require the owner's approval and accept deployments from `main` only; secret scanning, push protection and Dependabot security updates are enabled.
+- Repository settings: the `marketplace`, `open-vsx` and `github-release` Environments accept deployments from `main` only (publication stays automatic, with no reviewer gate); secret scanning, push protection and Dependabot security updates are enabled.
 - A test pins that a redirect to another origin never carries the GitHub token.
 
 ### Fixed

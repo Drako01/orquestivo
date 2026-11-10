@@ -203,7 +203,7 @@ Verdict aggregation: `FAIL > BLOCKED > INCONCLUSIVE > WARN > SKIP > PASS`. An ag
 - **Workspace Trust matters.** Analysis and generation require a trusted workspace; reads are bounded.
 - **Environments.** CI covers Linux (full gate and real VS Code), Windows and macOS (platform gate). WSL, Remote SSH, Dev Containers, multi-root and monorepos are not yet manually verified: [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
 - **Static injection checks.** `EXPRESSION_IN_SCRIPT` follows a fixed list of untrusted contexts and does not track values copied through `steps.*.outputs` or `needs.*.outputs`. A clean scan is not a security guarantee.
-- **Single maintainer.** One owner approves pull requests and releases; each publish still needs a separate approval per registry on a protected Environment, and the release gate verifies that configuration ([docs/RELEASE.md](docs/RELEASE.md#ownership-model)). OIDC trust in the registries is registry-side and cannot be verified from the repository.
+- **Single maintainer.** One owner approves pull requests and merges them through the ruleset bypass. Merging a release to `main` publishes it automatically, after the strict gate re-run in `publish.yml`; the Environments only accept deployments from `main`, and the gate verifies that configuration ([docs/RELEASE.md](docs/RELEASE.md#ownership-model)). OIDC trust in the registries is registry-side and cannot be verified from the repository.
 
 Related: [Security](SECURITY.md), [Privacy](PRIVACY.md), [Threat model](docs/THREAT_MODEL.md), [Security audit](docs/SECURITY_AUDIT.md), [Architecture](ARCHITECTURE.md), [Roadmap](ROADMAP.md).
 

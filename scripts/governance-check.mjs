@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Repository governance check (read-only, needs the GitHub API through the `gh` CLI).
 // Verifies that the controls the release documentation relies on are actually configured:
-//   - every environment used by publish.yml exists, has required reviewers and a deployment branch policy;
+//   - every environment used by publish.yml exists and only accepts deployments from selected branches (the publish
+//     workflow is automatic once a release is merged, so the branch policy is what keeps other refs from publishing);
 //   - the "Protect main" ruleset is active and requires pull requests plus status checks.
 // If the API cannot be read the result is BLOCKED, never PASS. Security-and-analysis settings are only
 // visible to repository admins, so they are reported as evidence when visible and never fail the step.
@@ -22,8 +23,6 @@ export function evaluateGovernance({ expectedEnvironments, environments, ruleset
   for (const name of expectedEnvironments) {
     const env = environments.find((e) => e.name === name);
     if (!env) { problems.push(`environment "${name}" does not exist`); continue; }
-    const reviewers = (env.protection_rules ?? []).filter((r) => r.type === 'required_reviewers' && (r.reviewers?.length ?? 0) > 0);
-    if (reviewers.length === 0) problems.push(`environment "${name}" has no required reviewers`);
     if (!env.deployment_branch_policy) problems.push(`environment "${name}" has no deployment branch policy`);
   }
   const main = rulesets.find((r) => r.name === MAIN_RULESET);

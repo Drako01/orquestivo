@@ -55,10 +55,10 @@ How to read this file: `[x]` means the capability or check exists in the reposit
 - [x] Static analysis executes no repository commands and makes no network calls — design in `docs/THREAT_MODEL.md`; connector and AI are opt-in
 - [x] No telemetry, AI disabled by default, no bundled AI provider — `PRIVACY.md`, `src/ai/`
 - [x] Versioned rulesets and CODEOWNERS; drift checker — `.github/rulesets/`, `scripts/rulesets.mjs`, `test/rulesets.test.cjs`
-- [x] Publish workflow with SHA-pinned actions, least-privilege permissions, a `private: true` guard and one approval per registry on protected Environments — `.github/workflows/publish.yml`, `docs/RELEASE.md`
+- [x] Publish workflow with SHA-pinned actions, least-privilege permissions, a `private: true` guard and automatic publication after the merge to `main` — `.github/workflows/publish.yml`, `docs/RELEASE.md`
 - [x] SecretStorage token handling and webview CSP re-audited on the shipped UI — `docs/SECURITY_AUDIT.md` (2026-11-10), real-host scenarios in `test/integration/scenarios.cjs`
 - [x] Rulesets active on the live repository — checked on every release gate by `scripts/governance-check.mjs`; `npm run rulesets:status` reports drift against `.github/rulesets/`
-- [x] Protected environments `marketplace`, `open-vsx`, `github-release` (owner as required reviewer, `main`-only deployments) — `scripts/governance-check.mjs`
+- [x] Protected environments `marketplace`, `open-vsx`, `github-release` (`main`-only deployments, no reviewer gate by design) — `scripts/governance-check.mjs`
 - [ ] OIDC trusted publishing registered in both registries — **BLOCKED_BY_EXTERNAL_DEPENDENCY** (registry-side, not visible from the repository; the `0.1.2` publication succeeded with it)
 - [ ] `npm audit` result on the final head — needs network; `BLOCKED` when unreachable
 - [ ] Formal threat-model acceptance by the maintainer (`docs/THREAT_MODEL.md` is a draft for review)

@@ -20,13 +20,13 @@ Plan and criteria: `PLAN_ENTERPRISE_AAAA.md`.
 | 9 | Environments and compatibility | BLOCKED | CI covers three OS; WSL, SSH, Dev Containers, multi-root are manual pending (`docs/COMPATIBILITY.md`) |
 | 10 | Advanced integrations | WARN | GitLab/Azure/Jenkins providers, metrics and opt-in GitHub runs implemented with mocks; AI has no bundled provider by design |
 | 11 | Documentation and onboarding | PASS | README, guides, architecture, privacy, troubleshooting and the security and release documents updated and kept in sync by tests; screenshots 7 and 8 added (rendered from the product HTML) |
-| 12 | Release engineering | WARN | `0.1.1` and `0.1.2` published through `publish.yml`; Environments require the owner and `main`-only deployments (verified by `scripts/governance-check.mjs`); registry-side OIDC is not verifiable here; rollback never rehearsed on a real registry |
+| 12 | Release engineering | WARN | `0.1.1` and `0.1.2` published through `publish.yml`; Environments accept `main` deployments only and publication is automatic after the merge (verified by `scripts/governance-check.mjs`); registry-side OIDC is not verifiable here; rollback never rehearsed on a real registry |
 
 ## Open items for the next release
 
 - Registry-side OIDC trusted-publisher registrations are owner settings that cannot be verified from the repository.
 - A rollback has not been rehearsed on a real registry (procedure in `docs/RELEASE.md`).
-- Pull request review is not independent: the project has a single owner ([docs/RELEASE.md](docs/RELEASE.md#ownership-model)).
+- Pull request review is not independent and publication has no second approval: the project has a single owner and chose automatic publication ([docs/RELEASE.md](docs/RELEASE.md#ownership-model)).
 - WSL, Remote SSH, Dev Containers, multi-root and monorepo checks, a manual accessibility pass and the real GitHub end-to-end test are still pending.
 
 ## Evidence

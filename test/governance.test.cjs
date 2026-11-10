@@ -4,23 +4,22 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const load = () => import('../scripts/governance-check.mjs');
-const reviewers = { type: 'required_reviewers', reviewers: [{ type: 'User', reviewer: { id: 1 } }] };
-const protectedEnv = (name) => ({ name, protection_rules: [reviewers], deployment_branch_policy: { protected_branches: false, custom_branch_policies: true } });
+const protectedEnv = (name) => ({ name, protection_rules: [{ type: 'branch_policy' }], deployment_branch_policy: { protected_branches: false, custom_branch_policies: true } });
 const ruleset = (over = {}) => ({ name: 'Protect main', enforcement: 'active', rules: [{ type: 'pull_request' }, { type: 'required_status_checks' }], ...over });
 const expectedEnvironments = ['marketplace', 'open-vsx', 'github-release'];
 
-test('governance: fully protected environments and ruleset pass', async () => {
+test('governance: environments restricted to branches and an active ruleset pass without a reviewer gate', async () => {
   const { evaluateGovernance } = await load();
   assert.deepEqual(evaluateGovernance({ expectedEnvironments, environments: expectedEnvironments.map(protectedEnv), rulesets: [ruleset()] }), []);
 });
 
-test('governance: the exact misconfiguration found by the audit is reported', async () => {
+test('governance: environments open to any ref are reported', async () => {
   const { evaluateGovernance } = await load();
   const open = (name) => ({ name, protection_rules: [], deployment_branch_policy: null });
   const problems = evaluateGovernance({ expectedEnvironments, environments: expectedEnvironments.map(open), rulesets: [ruleset()] });
-  assert.equal(problems.length, 6);
-  assert.ok(problems.some((p) => p.includes('"marketplace" has no required reviewers')));
+  assert.equal(problems.length, 3);
   assert.ok(problems.some((p) => p.includes('"open-vsx" has no deployment branch policy')));
+  assert.ok(problems.every((p) => !p.includes('reviewer')), 'a reviewer is intentionally not required: publishing is automatic after the merge');
 });
 
 test('governance: missing environment, disabled or incomplete ruleset are reported', async () => {
