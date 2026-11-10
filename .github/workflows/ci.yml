@@ -15,6 +15,9 @@ jobs:
     name: Verify (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read # governance-check.mjs reads repository Environments
     strategy:
       fail-fast: false
       matrix:
@@ -31,7 +34,7 @@ jobs:
         if: runner.os == 'Linux'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: npm run verify:enterprise
+        run: npm run verify:enterprise -- --strict
       - name: Verify (OS-sensitive subset)
         if: runner.os != 'Linux'
         run: npm run verify:platform

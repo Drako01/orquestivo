@@ -37,3 +37,9 @@ test('governance: environments are derived from publish.yml, never hard-coded', 
   const workflow = fs.readFileSync(path.join(__dirname, '../.github/workflows/publish.yml'), 'utf8');
   assert.deepEqual(environmentsUsedBy(workflow).sort(), ['github-release', 'marketplace', 'open-vsx']);
 });
+
+test('CI: governance API access and strict enterprise gate are required', () => {
+  const workflow = fs.readFileSync(path.join(__dirname, '../.github/workflows/ci.yml'), 'utf8');
+  assert.match(workflow, /permissions:\s*\n\s+contents: read\s*\n\s+actions: read/);
+  assert.match(workflow, /run: npm run verify:enterprise -- --strict/);
+});
