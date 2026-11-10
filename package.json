@@ -2,7 +2,7 @@
   "name": "orquestivo",
   "displayName": "Orquestivo",
   "description": "Design, inspect, and verify CI/CD workflows with evidence-backed diagnostics.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "armotusitio",
   "author": {
     "name": "Alejandro Daniel Di Stefano",
@@ -17,7 +17,6 @@
     "url": "https://armotusitio.com.ar/soporte/"
   },
   "homepage": "https://armotusitio.com.ar",
-  "preview": true,
   "engines": {
     "vscode": "^1.99.0"
   },
