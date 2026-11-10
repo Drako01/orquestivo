@@ -107,3 +107,18 @@ The three protected check names remain `Verify (ubuntu-latest)`, `Verify (window
 
 After merging to `main`, `publish.yml` only reuses the verified PR artifact: no CI matrix or mutation suite runs a second time.
 
+
+
+### E2E test host reliability (packaged VSIX)
+
+The real VS Code extension-host suite uses a test-only prompt bridge registered inside Orquestivo's own
+`vscode` API facade when `ORQUESTIVO_E2E_MODE=1`. Mocking `vscode.window` from the
+**test extension** is insufficient: VS Code may provide separate per-extension API facades,
+leaving real modal prompts waiting for user input on a headless CI runner.
+The bridge is inactive in normal installations, and the test runner sets the flag only in
+the isolated VS Code test process. The suite exercises the real generator/undo, symlink
+refusal, diagnostics, fake-network evidence, AI privacy, and real VSIX activation.
+
+Each scenario logs START/PASS and fails after 45 seconds if it cannot complete; the entire
+VS Code host has a 5-minute watchdog with a distinct `E2E_TIMEOUT` error. This exposes
+a stalled dialog or launch instead of silently reaching GitHub's 20-minute job timeout.

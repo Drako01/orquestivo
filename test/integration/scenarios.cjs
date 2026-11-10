@@ -10,33 +10,16 @@ const vscode = require('vscode');
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const exists = (file) => fs.existsSync(file);
 
-/** Replaces the prompt APIs with deterministic answers and records every message shown. */
-function stubWindow({ inputs = [] } = {}) {
-  const original = {};
-  const recorded = { info: [], warning: [], error: [] };
-  const queue = [...inputs];
-  const patch = (name, fn) => { original[name] = vscode.window[name]; vscode.window[name] = fn; };
-  const messageStub = (kind) => async (message, ...rest) => {
-    recorded[kind].push(String(message));
-    return rest.filter((item) => typeof item === 'string')[0];
-  };
-  patch('showInformationMessage', messageStub('info'));
-  patch('showWarningMessage', messageStub('warning'));
-  patch('showErrorMessage', messageStub('error'));
-  patch('showQuickPick', async (items, options) => {
-    const list = await items;
-    return options?.canPickMany ? list.filter((item) => item.picked) : list[0];
-  });
-  patch('showInputBox', async (options) => (queue.length ? queue.shift() : options?.value ?? ''));
-  return {
-    recorded,
-    restore() { for (const [name, fn] of Object.entries(original)) vscode.window[name] = fn; },
-  };
-}
-
+/** Intercept prompts inside Orquestivo's own API facade, not the separate test extension facade. */
 async function withStubs(options, body) {
-  const stubs = stubWindow(options);
-  try { await body(stubs.recorded); } finally { stubs.restore(); }
+  const installed = await vscode.commands.executeCommand('orquestivo.__e2e.prompts.begin', options);
+  assert.equal(installed, true, 'integration prompt bridge must be active');
+  const messages = async () => vscode.commands.executeCommand('orquestivo.__e2e.prompts.snapshot');
+  try {
+    await body(messages);
+  } finally {
+    await vscode.commands.executeCommand('orquestivo.__e2e.prompts.end');
+  }
 }
 
 const workspaceRoot = () => {
@@ -76,7 +59,7 @@ async function wizardCreateAndUndo() {
   assert.equal(exists(file), false, 'precondition: the wizard target must not exist');
   await withStubs({ inputs: ['wizard-it.yml'] }, async (messages) => {
     await vscode.commands.executeCommand('orquestivo.generateCI');
-    assert.equal(exists(file), true, 'the wizard must create the workflow on disk; errors: ' + messages.error.join(' | '));
+    assert.equal(exists(file), true, 'the wizard must create the workflow on disk; errors: ' + (await messages()).error.join(' | '));
     const written = fs.readFileSync(file, 'utf8');
     assert.match(written, /^name: /m);
     await vscode.commands.executeCommand('orquestivo.analyze');
@@ -84,12 +67,12 @@ async function wizardCreateAndUndo() {
   });
   await withStubs({}, async (messages) => {
     await vscode.commands.executeCommand('orquestivo.undoLastGeneration');
-    assert.equal(exists(file), false, 'undo must delete the file the wizard created; errors: ' + messages.error.join(' | '));
+    assert.equal(exists(file), false, 'undo must delete the file the wizard created; errors: ' + (await messages()).error.join(' | '));
   });
   await withStubs({}, async (messages) => {
     await vscode.commands.executeCommand('orquestivo.undoLastGeneration');
-    assert.ok(messages.info.length > 0, 'a second undo has nothing to do and must say so');
-    assert.equal(messages.error.length, 0);
+    assert.ok((await messages()).info.length > 0, 'a second undo has nothing to do and must say so');
+    assert.equal((await messages()).error.length, 0);
   });
 }
 
@@ -108,7 +91,7 @@ async function wizardRefusesLinksOutsideWorkspace() {
     await withStubs({ inputs: ['escape-it.yml'] }, async (messages) => {
       await vscode.commands.executeCommand('orquestivo.generateCI');
       assert.deepEqual(fs.readdirSync(elsewhere), [], 'nothing may be written through a link that leaves the workspace');
-      assert.ok(messages.error.some((m) => /outside the workspace|fuera del workspace/.test(m)), 'the refusal must be explained: ' + messages.error.join(' | '));
+      assert.ok((await messages()).error.some((m) => /outside the workspace|fuera del workspace/.test(m)), 'the refusal must be explained: ' + (await messages()).error.join(' | '));
     });
   } finally {
     fs.rmSync(workflows, { recursive: true, force: true });
@@ -157,7 +140,7 @@ async function openFindingRejectsForeignTargets() {
     await vscode.commands.executeCommand('orquestivo.openFinding', 'command:workbench.action.quit', 1);
     await vscode.commands.executeCommand('orquestivo.openFinding', 'file:///etc/passwd', 1);
     await vscode.commands.executeCommand('orquestivo.openFinding', { not: 'a uri' }, 1);
-    assert.equal(messages.warning.length, 3, 'each foreign target must be refused with a warning');
+    assert.equal((await messages()).warning.length, 3, 'each foreign target must be refused with a warning');
   });
 }
 
@@ -172,7 +155,7 @@ async function aiStaysOffline() {
   try {
     await withStubs({}, async (messages) => {
       await vscode.commands.executeCommand('orquestivo.ai.explainFinding');
-      assert.ok(messages.info.length > 0, 'a disabled AI helper must explain how to enable it');
+      assert.ok((await messages()).info.length > 0, 'a disabled AI helper must explain how to enable it');
     });
     assert.deepEqual(calls, [], 'the AI helper must never touch the network');
   } finally {
@@ -185,7 +168,19 @@ exports.runScenarios = async function runScenarios() {
     remoteEvidenceWithFakeNetwork, openFindingRejectsForeignTargets, aiStaysOffline];
   for (const scenario of scenarios) {
     await sleep(50);
-    await scenario();
-    console.log('PASS integration scenario: ' + scenario.name);
+    console.log('START integration scenario: ' + scenario.name);
+    let timer;
+    try {
+      await Promise.race([
+        scenario(),
+        new Promise((_, reject) => {
+          timer = setTimeout(() => reject(new Error('E2E_TIMEOUT: ' + scenario.name +
+            ' exceeded 45 seconds (check dialog automation and extension-host logs)')), 45000);
+        }),
+      ]);
+      console.log('PASS integration scenario: ' + scenario.name);
+    } finally {
+      clearTimeout(timer);
+    }
   }
 };
