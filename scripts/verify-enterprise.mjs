@@ -10,6 +10,7 @@
 // Cache: PASS results are reused (as PASS_REUSED) only while the hash of the step's declared inputs,
 // the Node version and the platform are unchanged. Release-artifact and network steps are never cached.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { spawn } from 'node:child_process';
 import { join } from 'node:path';
 import { REPORTS, ROOT, STATUS, STEP_DIR, ensureDir, isPass, listFiles, parseArgs, readJson, run, sha256, writeJson } from './lib/common.mjs';
 
@@ -31,7 +32,7 @@ const STEPS = [
   { id: 'unit', title: 'Unit and contract tests', cmd: ['npm', ['test']], inputs: ['src', 'test', '.github', 'scripts/build-tests.mjs', 'scripts/rulesets.mjs', ...TOOLCHAIN] },
   { id: 'rulesets', title: 'Repository rulesets (offline check)', cmd: ['npm', ['run', 'rulesets:check']], inputs: ['.github', 'scripts/rulesets.mjs', 'package.json'] },
   { id: 'coverage', title: 'Coverage on original TypeScript vs thresholds', cmd: script('coverage.mjs'), inputs: ['src', 'test', 'scripts/coverage.mjs', 'scripts/coverage-thresholds.json', 'scripts/build-tests.mjs', ...TOOLCHAIN] },
-  { id: 'mutation', title: 'Mutation testing of critical modules', cmd: script('mutation/run.mjs'), inputs: ['src', 'test', 'scripts/mutation', 'scripts/build-tests.mjs', ...TOOLCHAIN] },
+  { id: 'mutation', title: 'Mutation testing of critical modules', cmd: script('mutation/run.mjs'), inputs: ['src', 'test', 'scripts/mutation', 'scripts/build-tests.mjs', ...TOOLCHAIN], timeoutMs: 25 * 60 * 1000 },
   { id: 'perf', title: 'Performance budgets (test/perf)', cmd: ['node', ['--test', 'test/perf/*.test.cjs']], inputs: ['src', 'test/perf', 'scripts/build-tests.mjs', ...TOOLCHAIN], required: false,
     prepare: () => (hasPerfTests() ? undefined : { status: STATUS.SKIP, summary: 'no test/perf/*.test.cjs yet' }), pre: script('build-tests.mjs') },
   { id: 'build-prod', title: 'Production bundle', cmd: ['npm', ['run', 'build:prod']], inputs: ['src', ...TOOLCHAIN], cache: false },
@@ -72,11 +73,35 @@ function inputsHash(step) {
 
 const readCache = (id) => { try { return readJson(join(CACHE_DIR, `${id}.json`)); } catch { return undefined; } };
 
-function execute(step) {
+// Stream the long mutation gate so GitHub Actions receives progress instead of waiting for a buffered process.
+function runMutationStreaming(command, args, timeoutMs) {
+  return new Promise((resolve) => {
+    const child = spawn(command, args, { cwd: ROOT, env: process.env, stdio: ['ignore', 'pipe', 'pipe'] });
+    let output = '';
+    let timedOut = false;
+    const collect = (chunk) => {
+      const part = String(chunk);
+      process.stdout.write(part);
+      output = (output + part).slice(-1024 * 1024);
+    };
+    child.stdout.on('data', collect);
+    child.stderr.on('data', collect);
+    child.on('error', (error) => { output = (output + String(error)).slice(-1024 * 1024); });
+    const timer = setTimeout(() => { timedOut = true; child.kill('SIGTERM'); }, timeoutMs);
+    child.on('close', (code, signal) => {
+      clearTimeout(timer);
+      resolve({ code: code ?? 1, signal, output, timedOut });
+    });
+  });
+}
+
+async function execute(step) {
   const log = [];
   let outcome = { code: 0 };
   for (const [command, args] of [step.pre, step.cmd, step.then].filter(Boolean)) {
-    const result = run(command === 'node' ? process.execPath : command, args);
+    const executable = command === 'node' ? process.execPath : command;
+    const result = step.id === 'mutation' ? await runMutationStreaming(executable, args, step.timeoutMs)
+      : run(executable, args, { timeoutMs: step.timeoutMs });
     log.push(`$ ${command} ${args.join(' ')}\n${result.output}`);
     outcome = result;
     if (result.code !== 0) break;
@@ -115,7 +140,7 @@ for (const step of STEPS) {
   if (early) { results.push({ ...entry, status: early.status, durationMs: 0, evidence: { summary: early.summary } }); continue; }
   const t0 = Date.now();
   console.log(`> ${step.id}: ${step.title}`);
-  const { status, evidence } = execute(step);
+  const { status, evidence } = await execute(step);
   console.log(`  ${status}${evidence.summary ? ' - ' + evidence.summary : ''}`);
   results.push({ ...entry, status, evidence: { ...evidence, inputsHash: key }, durationMs: Date.now() - t0 });
   if (status === STATUS.PASS && step.cache !== false) writeJson(join(CACHE_DIR, `${step.id}.json`), { key, status, at: new Date().toISOString(), evidence });
