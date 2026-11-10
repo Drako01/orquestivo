@@ -45,6 +45,13 @@ The flag was removed in the `0.1.1` release commit. `publish.yml` still fails in
 
 To prevent a single long mutation worker from exceeding runner availability, the PR CI executes the unchanged mutation sample in five independent jobs (11 ordinary targets plus four non-overlapping 10-mutant write-plan shards). The required `Verify (ubuntu-latest)` gate aggregates the complete sample and enforces all original score floors, including write-plan's 90%. Windows and macOS checks remain required, and package-preview waits for all three. No checks rerun after the merge.
 
+
+### GitHub Actions PR associations after merge
+
+GitHub can report `workflow_run.pull_requests: []` for a previously successful PR-triggered CI run **after** that PR is merged. This is a GitHub API metadata behavior, not a loss of the original CI result. The release provenance resolver accepts an empty association array **only after** it has independently identified the one merged PR for the actual `main` commit, and verified the run's exact PR head SHA, repository, `CI` workflow path, `pull_request` event, successful completion and pre-merge timestamp. A non-empty association array for another PR is rejected. The downloaded VSIX's manifest must then match the PR number, run ID, head SHA, merged Git tree, version and SHA-256. Missing fields, other repositories, stale runs or altered bytes continue to block publishing.
+
+This allows safe recovery from the failed 0.2.0 publish after PR #4 without re-running any tests on `main`. If 0.2.0 has not yet been published, an ordinary new PR containing only the provenance fix may keep the version at 0.2.0; merging the successful follow-up PR starts the publish workflow using its own validated VSIX. Do **not** bump to 0.2.1 solely to repair a release that was never shipped.
+
 ## Release checklist
 
 1. Feature, security, privacy, accessibility and i18n acceptance complete (`ENTERPRISE_AAAA_STATUS.md`).

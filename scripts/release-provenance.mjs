@@ -22,10 +22,16 @@ export function selectMergedPr(prs, sha) {
 }
 
 export function selectSuccessfulRun(runs, pr) {
+  // GitHub can clear workflow_run.pull_requests after the PR is merged. An empty array
+  // is NOT proof that a run was unrelated: the authoritative link is the merged PR's
+  // exact head SHA, verified repository, workflow, event and pre-merge timestamp.
+  // A non-empty association MUST still contain the expected PR number.
+  const associated = (run) => Array.isArray(run.pull_requests) &&
+    (run.pull_requests.length === 0 || run.pull_requests.some((p) => p.number === pr.number));
   const matches = runs.filter((r) => r.status === 'completed' && r.conclusion === 'success' &&
     r.event === 'pull_request' && r.path === '.github/workflows/ci.yml' &&
     r.head_sha === pr.head.sha && r.head_repository?.full_name === pr.base.repo.full_name &&
-    r.pull_requests?.some((p) => p.number === pr.number) &&
+    associated(r) &&
     new Date(r.created_at).getTime() <= new Date(pr.merged_at).getTime() && numberId(r.id));
   matches.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   assert(matches.length, 'no successful pre-merge PR CI for the exact head');
