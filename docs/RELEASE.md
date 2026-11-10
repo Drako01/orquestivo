@@ -20,7 +20,7 @@ Orquestivo has a single owner and maintainer. That has concrete consequences for
 
 - The owner is the only person who can approve a pull request or use the ruleset bypass (repository role *Admin*, bypass mode *pull request only*) to merge it. A pull request is still required: nobody pushes directly to `main`.
 - `CODEOWNERS` names the owner for every path. Because an author cannot approve their own pull request, the owner merges through the bypass after the three `Verify` checks are green. Required checks are not skipped by the bypass in practice: merge only on green.
-- The owner chose automatic publication: the three Environments have **no required reviewer**, because a reviewer who is also the only owner adds a click, not a control. What stands between a merge and a publication is the pull request, the three required `Verify` checks, the strict gate re-run in `publish.yml` (including the governance check) and the `main`-only deployment policy.
+- The owner chose automatic publication: the three Environments have **no required reviewer**, because a reviewer who is also the only owner adds a click, not a control. What stands between a merge and a publication is the pull request, the three required `Verify` checks, the successful pre-merge PR CI artifact with a verified source tree and checksum, plus the `main`-only deployment policy.
 - If a second maintainer joins, add them to `CODEOWNERS` and to the Environment reviewers, and switch on self-review prevention, in the same change.
 
 ## `private: true` in `package.json`
@@ -49,7 +49,7 @@ The flag was removed in the `0.1.1` release commit. `publish.yml` still fails in
 4. CI is green on the exact head for Linux, Windows and macOS, and the preview VSIX was exercised in a real VS Code.
 5. Maintainer approval recorded; `"private": true` removed in the release commit; merged to `main` by the owner.
 6. Merging to `main` starts **publish** and it runs to the end without further approval. To recover a partial publish, use `Actions > publish > Run workflow`: `confirmation`, `version`, a single `registries` value and the `vsix_run_id` of the earlier run.
-7. Watch the run: the strict gate, both registry jobs and the GitHub Release must finish green.
+7. Watch the run: the artifact-provenance/checksum validation, both registry jobs and the GitHub Release must finish green. No code checks are executed at this stage.
 8. Check actual visibility: the workflow polls the Marketplace gallery (`scripts/check-marketplace.mjs`); Open VSX activation can lag and is reported separately. A green workflow is not proof of a live listing; open both listings.
 9. The `release` job creates tag `vX.Y.Z` and the GitHub Release with the VSIX, its `.sha256`, the SBOM and the verification report, then downloads the released asset and re-verifies the checksum.
 
@@ -86,7 +86,7 @@ A rollback has not been exercised on a real registry yet. Rehearse steps 2 and 3
 
 ## Governance check
 
-`npm run verify:release` includes a read-only step that calls the GitHub API (through `gh`, or `GH_TOKEN` in CI) and fails if:
+The optional local/PR-only `npm run verify:release` includes a read-only step that calls the GitHub API (through `gh`, or `GH_TOKEN` in CI) and fails if:
 
 - an Environment used by `publish.yml` is missing or has no deployment branch policy (anything other than `main` could publish);
 - the `Protect main` ruleset is missing, not active, or lacks the pull request and status check rules.
