@@ -94,3 +94,16 @@ These numbers describe small, well-formed workflows on one developer machine. Th
 ## Not covered by automation yet
 
 See `docs/COMPATIBILITY.md` for manual environments and `docs/SECURITY_AUDIT.md` for open checks.
+
+
+### PR CI mutation sharding (full score retained)
+
+The three protected check names remain `Verify (ubuntu-latest)`, `Verify (windows-latest)`, and `Verify (macos-latest)`. The Linux check is now an **aggregate gate**, not a single long-running runner. Ubuntu's strict `enterprise-ci` profile executes all non-mutation enterprise steps, while mutation testing executes as five independent jobs:
+
+- `mutation-rest`: all eleven other critical targets, each with its original 40-mutant cap and minimum score.
+- `mutation-write-plan-0` through `mutation-write-plan-3`: four disjoint shards of the same deterministic 40 selected mutants for `src/core/generation/write-plan.ts` (10 mutants each).
+
+`scripts/mutation/aggregate-ci.mjs` requires every shard artifact, each complete mutant sample, the original source/version of the CI run, and every configured target's **full aggregated score floor** (write-plan >= 90%). A partially executed mutation job, a missing slice, or an insufficient combined score fails the required Ubuntu check. The packaging job cannot run until Ubuntu, Windows, and macOS pass. The local `npm run verify:enterprise` and `npm run verify:release` continue to execute their original full mutation suite.
+
+After merging to `main`, `publish.yml` only reuses the verified PR artifact: no CI matrix or mutation suite runs a second time.
+

@@ -8,6 +8,8 @@
 
 How to read this file: `[x]` means the capability or check exists in the repository **and** a file in the repository (source, test, script or workflow) is cited as evidence. A checked box is not a claim that the latest head passes; run results are dated and quoted separately. `[ ]` means missing, unexecuted, inconclusive or blocked. A skipped or inconclusive check is never counted as a pass.
 
+**Pre-merge mutation execution:** the Ubuntu required check aggregates the strict enterprise-ci non-mutation gate and all 12 mutation targets (write-plan 40 mutants split into four 10-mutant shards); no mutation threshold is reduced. See `.github/workflows/ci.yml` and `scripts/mutation/aggregate-ci.mjs`.
+
 ## Latest recorded local run
 
 2026-11-10, Windows, Node v24.22.1, working tree for `0.2.0`: `npm run verify:enterprise` finished with overall **PASS** (15 of 15 steps, including the release governance check and `npm audit`). Evidence and per-step numbers: [ENTERPRISE_AAAA_STATUS.md](ENTERPRISE_AAAA_STATUS.md). CI on the exact head is pending until the branch is pushed.

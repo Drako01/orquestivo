@@ -19,6 +19,7 @@ const PROFILES = {
   fast: ['typecheck', 'lint', 'unit'],
   platform: ['typecheck', 'lint', 'unit', 'rulesets', 'build-prod'], // OS-sensitive subset for the Windows/macOS CI legs
   enterprise: null,
+  'enterprise-ci': null, // exact enterprise gate minus separately sharded, fail-closed mutation gate
 };
 const TOOLCHAIN = ['package.json', 'package-lock.json', 'tsconfig.json'];
 
@@ -48,11 +49,12 @@ const STEPS = [
 const { flags, values } = parseArgs(process.argv.slice(2), ['profile', 'only', 'skip', 'base']);
 const list = (value) => (value ? value.split(',').map((s) => s.trim()).filter(Boolean) : []);
 const profile = values.profile ?? 'enterprise';
-if (!(profile in PROFILES)) throw new Error(`Unknown profile "${profile}" (fast | platform | enterprise)`);
+if (!(profile in PROFILES)) throw new Error(`Unknown profile "${profile}" (fast | platform | enterprise | enterprise-ci)`);
 for (const id of [...list(values.only), ...list(values.skip)]) if (!STEPS.some((s) => s.id === id)) throw new Error(`Unknown step "${id}". Known: ${STEPS.map((s) => s.id).join(', ')}`);
 if (flags.has('list')) { for (const s of STEPS) console.log(`${s.id}\t${s.title}`); process.exit(0); }
 
-const inProfile = (step) => !PROFILES[profile] || PROFILES[profile].includes(step.id);
+const inProfile = (step) => (profile !== 'enterprise-ci' || step.id !== 'mutation') &&
+  (!PROFILES[profile] || PROFILES[profile].includes(step.id));
 const required = (step) => step.required !== false;
 
 function changedFiles() {

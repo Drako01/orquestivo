@@ -3,7 +3,7 @@
 // Each mutant: mutate the TypeScript source text, compile it in memory with esbuild, drop the
 // result into an isolated copy of dist-test/ + test/ (reports/.mutation/work) and run only the
 // relevant test files. A mutant is KILLED when those tests fail (or time out), SURVIVED when they pass.
-// Usage: node scripts/mutation/run.mjs [--max-mutants N] [--min-score PCT] [--target src/core/analyzer.ts] [--seed-offset N]
+// Usage: node scripts/mutation/run.mjs [--max-mutants N] [--min-score PCT] [--target src/core/analyzer.ts] [--slice-index N --slice-count N] [--exclude-target FILE]
 import { cpSync, existsSync, readFileSync, rmSync, writeFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { spawn } from 'node:child_process';
@@ -12,8 +12,15 @@ import { transform } from 'esbuild';
 import { ROOT, STATUS, ensureDir, finish, parseArgs, posix, readJson, run, writeJson } from '../lib/common.mjs';
 import { applyMutation, findMutations, sample } from './mutations.mjs';
 
-const { flags, values } = parseArgs(process.argv.slice(2), ['max-mutants', 'min-score', 'target']);
+const { flags, values } = parseArgs(process.argv.slice(2), ['max-mutants', 'min-score', 'target', 'slice-index', 'slice-count', 'exclude-target']);
 const config = readJson(join(ROOT, 'scripts', 'mutation', 'targets.json'));
+const sliceIndex = Number(values['slice-index'] ?? 0);
+const sliceCount = Number(values['slice-count'] ?? 1);
+if (!Number.isSafeInteger(sliceCount) || sliceCount < 1 || sliceCount > 40 ||
+    !Number.isSafeInteger(sliceIndex) || sliceIndex < 0 || sliceIndex >= sliceCount ||
+    (sliceCount > 1 && !values.target) || (values.target && values['exclude-target'])) {
+  throw new Error('Invalid mutation target/slice arguments');
+}
 const inheritedRunId = process.env.ORQUESTIVO_MUTATION_RUN_ID;
 const runId = inheritedRunId && /^orq-[0-9]+-[0-9]+$/.test(inheritedRunId)
   ? inheritedRunId : `orq-${process.pid}-${Date.now()}`;
@@ -50,7 +57,9 @@ async function mutateTarget(target, limits) {
   if (baseline.code !== 0) return { source: target.source, status: STATUS.FAIL, reason: 'baseline tests fail without mutation', tail: baseline.output.slice(-800) };
 
   const sites = findMutations(original);
-  const chosen = sample(sites, limits.max);
+  const sampled = sample(sites, limits.max);
+  // Shard the SAME deterministic sample; do not lower mutation coverage or thresholds.
+  const chosen = sampled.filter((_, index) => index % sliceCount === sliceIndex);
   const mutants = [];
   const started = Date.now();
   for (const site of chosen) {
@@ -75,9 +84,14 @@ async function mutateTarget(target, limits) {
   const exhausted = mutants.some((m) => m.result === 'BUDGET_EXCEEDED');
   const floor = Number(values['min-score'] ?? target.minScore);
   return {
-    source: target.source, tests, totalSites: sites.length, tried: mutants.length, killed, survived,
+    source: target.source, tests, totalSites: sites.length,
+    sampledTotal: sampled.length, sliceIndex, sliceCount,
+    tried: mutants.length, killed, survived,
     invalid: mutants.filter((m) => m.result === 'INVALID').length, score, minScore: floor,
-    status: exhausted || score === null ? STATUS.INCONCLUSIVE : score >= floor ? STATUS.PASS : STATUS.FAIL,
+    // A slice cannot be judged against the full target's floor independently.
+    // Its final score is enforced by aggregate-ci.mjs after every slice completes.
+    status: exhausted || score === null ? STATUS.INCONCLUSIVE
+      : sliceCount > 1 ? STATUS.PASS : score >= floor ? STATUS.PASS : STATUS.FAIL,
     survivors: mutants.filter((m) => m.result === 'SURVIVED'),
   };
 }
@@ -86,7 +100,9 @@ const limits = {
   max: Number(values['max-mutants'] ?? config.maxMutantsPerTarget),
   timeoutMs: config.mutantTimeoutMs, budgetMs: 8 * 60 * 1000,
 };
-const selected = config.targets.filter((t) => !values.target || t.source === values.target);
+const selected = config.targets.filter((t) =>
+  (!values.target || t.source === values.target) &&
+  (!values['exclude-target'] || t.source !== values['exclude-target']));
 if (!selected.length) {
   finish('mutation', STATUS.FAIL, { summary: `unknown target: ${values.target}` });
 } else if (flags.has('worker')) {
@@ -133,6 +149,7 @@ if (!selected.length) {
           const childArgs = [fileURLToPath(import.meta.url), '--worker', '--target', target.source];
           if (values['max-mutants']) childArgs.push('--max-mutants', values['max-mutants']);
           if (values['min-score']) childArgs.push('--min-score', values['min-score']);
+          if (sliceCount > 1) childArgs.push('--slice-index', String(sliceIndex), '--slice-count', String(sliceCount));
           const child = spawn(process.execPath, childArgs, {
             cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'],
             env: { ...process.env, ORQUESTIVO_MUTATION_RUN_ID: runId },
@@ -168,7 +185,7 @@ if (!selected.length) {
     const status = results.some((r) => r.status === STATUS.FAIL || r.status === STATUS.INCONCLUSIVE) ? STATUS.FAIL
       : !measured.length ? STATUS.INCONCLUSIVE
       : results.some((r) => r.status === STATUS.SKIP || r.status === STATUS.WARN) ? STATUS.WARN : STATUS.PASS;
-    writeJson(join(ROOT, 'reports', 'mutation.json'), { limits, concurrency, results });
+    writeJson(join(ROOT, 'reports', 'mutation.json'), { limits: { ...limits, sliceIndex, sliceCount }, concurrency, results });
     finish('mutation', status, {
       summary: results.map((r) => `${r.source}: ${r.status}${r.score != null ? ` score ${r.score}% (${r.killed} killed, ${r.survived} survived of ${r.tried})` : ` (${r.reason ?? 'no score'})`}`).join('; '),
       report: 'reports/mutation.json', results,

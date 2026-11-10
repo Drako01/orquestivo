@@ -41,6 +41,10 @@ The flag was removed in the `0.1.1` release commit. `publish.yml` still fails in
 4. Missing/expired artifact, missing CI success, a different Git tree or a checksum mismatch **block publication without re-running checks**. Do not bypass: update the PR and validate before merge, or create a new release PR if a merge already occurred.
 5. Explicit partial-publish recovery reuses an earlier publish run's unchanged VSIX and archived reports. It still verifies provenance. Registry credentials, OIDC availability and storefront propagation are separate publication dependencies, not code checks.
 
+### Sharded Ubuntu verification before merge
+
+To prevent a single long mutation worker from exceeding runner availability, the PR CI executes the unchanged mutation sample in five independent jobs (11 ordinary targets plus four non-overlapping 10-mutant write-plan shards). The required `Verify (ubuntu-latest)` gate aggregates the complete sample and enforces all original score floors, including write-plan's 90%. Windows and macOS checks remain required, and package-preview waits for all three. No checks rerun after the merge.
+
 ## Release checklist
 
 1. Feature, security, privacy, accessibility and i18n acceptance complete (`ENTERPRISE_AAAA_STATUS.md`).

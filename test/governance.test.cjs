@@ -41,5 +41,5 @@ test('governance: environments are derived from publish.yml, never hard-coded', 
 test('CI: governance API access and strict enterprise gate are required', () => {
   const workflow = fs.readFileSync(path.join(__dirname, '../.github/workflows/ci.yml'), 'utf8');
   assert.match(workflow, /permissions:\s*\n\s+contents: read\s*\n\s+actions: read/);
-  assert.match(workflow, /run: npm run verify:enterprise -- --strict/);
+  assert.match(workflow, /node scripts\/verify-enterprise\.mjs --profile enterprise-ci --strict/);
 });
