@@ -5,10 +5,15 @@ Format follows Keep a Changelog; versions follow SemVer.
 ## Version strategy
 
 - `0.1.0` was uploaded manually to both registries as the first preview. This work is released as **`0.1.1`** (the owner chose a patch-level bump); the registries do not allow re-publishing an existing version.
+- `0.3.0` is a minor release: the project selector, audit status, guided fixes for every provider and the tabbed Control Center add features without removing or renaming any command, setting or rule code.
 - `0.2.0` is a minor release: it widens what the analyzer reports and tightens release controls, without removing or renaming any command, setting or rule code.
 - Publication is automatic from `main`: a merge that changes `package.json` to a version without a GitHub Release starts [`publish.yml`](.github/workflows/publish.yml) and runs to the end without a second approval: the merge is the release decision ([docs/RELEASE.md](docs/RELEASE.md)).
 
 ## [Unreleased]
+
+_Nothing yet._
+
+## [0.3.0] — 2026-11-15
 
 ### Added
 - Control Center: project selector ("Change project", command `orquestivo.selectProject`), remembered per workspace; supports multi-root, monorepo sub-projects and an explicit "entire workspace" scope. Scanning, intent contract, GitHub repo guess and the CI generator default now follow the selected project; results of a previous project are discarded on change.
@@ -26,9 +31,7 @@ Format follows Keep a Changelog; versions follow SemVer.
 - Specific states: untrusted workspace (Manage workspace trust), cancelled analysis, unreadable/oversized/failed files.
 
 ### Not yet implemented
-- Real-VS-Code integration test of the apply/undo flow and new README screenshots (no browser could be launched under the command policy). See `docs/UPGRADE_ORQUESTIVO_UX_CICD_CHECKLIST.md`.
-
-_Nothing yet._
+- Real-VS-Code integration test of the apply/undo flow. The README gallery now includes screenshots of the current Control Center (renders of the product's own HTML). See `docs/UPGRADE_ORQUESTIVO_UX_CICD_CHECKLIST.md`.
 
 ## [0.2.0] — 2026-11-10
 

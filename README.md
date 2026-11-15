@@ -9,7 +9,7 @@
 
 <p align="center">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-7C8CF8">
-  <img alt="Version 0.2.0" src="https://img.shields.io/badge/version-0.2.0-14181D">
+  <img alt="Version 0.3.0" src="https://img.shields.io/badge/version-0.3.0-14181D">
   <img alt="Visual Studio Code 1.99+" src="https://img.shields.io/badge/VS_Code-1.99%2B-14181D">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178C6">
 </p>
