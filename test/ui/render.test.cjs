@@ -73,7 +73,7 @@ test('render: pipeline diagram is an accessible SVG with a text alternative and 
     assert.match(node, /aria-label="Job [^"]+, line \d+, depends on \d+ job\(s\)\. Press Enter/);
     assert.match(node, /data-file="0" data-line="\d+"/);
   }
-  assert.match(html, /<details><summary>Text alternative of the diagram<\/summary><pre>3 job\(s\)/);
+  assert.match(html, /<details id="pipe-text-0"><summary>Text alternative of the diagram<\/summary><pre>3 job\(s\)/);
   assert.match(html, /role="region" aria-label="Pipeline diagram of /);
   assert.ok(!/running|queued|succeeded|in progress/i.test(svg), 'diagram must not invent execution states');
 });

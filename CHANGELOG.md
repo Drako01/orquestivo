@@ -5,12 +5,33 @@ Format follows Keep a Changelog; versions follow SemVer.
 ## Version strategy
 
 - `0.1.0` was uploaded manually to both registries as the first preview. This work is released as **`0.1.1`** (the owner chose a patch-level bump); the registries do not allow re-publishing an existing version.
+- `0.3.0` is a minor release: the project selector, audit status, guided fixes for every provider and the tabbed Control Center add features without removing or renaming any command, setting or rule code.
 - `0.2.0` is a minor release: it widens what the analyzer reports and tightens release controls, without removing or renaming any command, setting or rule code.
 - Publication is automatic from `main`: a merge that changes `package.json` to a version without a GitHub Release starts [`publish.yml`](.github/workflows/publish.yml) and runs to the end without a second approval: the merge is the release decision ([docs/RELEASE.md](docs/RELEASE.md)).
 
 ## [Unreleased]
 
 _Nothing yet._
+
+## [0.3.0] — 2026-11-15
+
+### Added
+- Control Center: project selector ("Change project", command `orquestivo.selectProject`), remembered per workspace; supports multi-root, monorepo sub-projects and an explicit "entire workspace" scope. Scanning, intent contract, GitHub repo guess and the CI generator default now follow the selected project; results of a previous project are discarded on change.
+- "Analyze existing CI/CD" is the primary action and "Create new CI" the alternative; honest review status (needs attention / partial / no problems detected by the available rules / no CI / not evaluated) and a prioritised, de-duplicated improvement plan (manual guidance only).
+- Pure `core/project` and `core/recommendations` modules with unit tests.
+
+### Changed
+- `docs/USAGE.md` no longer claims an unreleased preview or that files are never overwritten.
+
+- Guided fixes for existing GitHub Actions workflows: `PERMISSIONS_UNDECLARED` and `TIMEOUT_UNSET` get a verified minimal edit (`core/remediation`), diff preview, modal confirmation, SHA-256 guard against concurrent edits, rollback on write failure, re-analysis and `orquestivo.undoImprovement`. Commands `orquestivo.improveFinding` (internal) and `orquestivo.undoImprovement`.
+
+- Verified fixes for GitLab (`GITLAB_NO_TIMEOUT`, `GITLAB_ARTIFACT_NO_EXPIRY`), Azure (`AZURE_NO_TIMEOUT`) and Jenkins (`JENKINS_NO_TIMEOUT`, `JENKINS_NO_BUILD_DISCARDER`); the planner now lives in `src/providers/remediation.ts` and re-analyzes with the owning provider.
+- Control Center tabs (Summary, Findings, Improvements, Pipeline, Evidence, Advanced) with keyboard navigation; after the first render the host posts only the `<main>` markup so tab, focus, scroll and open sections are preserved.
+- Undo of the last improvement persists in workspace state (validated on load).
+- Specific states: untrusted workspace (Manage workspace trust), cancelled analysis, unreadable/oversized/failed files.
+
+### Not yet implemented
+- Real-VS-Code integration test of the apply/undo flow. The README gallery now includes screenshots of the current Control Center (renders of the product's own HTML). See `docs/UPGRADE_ORQUESTIVO_UX_CICD_CHECKLIST.md`.
 
 ## [0.2.0] — 2026-11-10
 

@@ -1,10 +1,12 @@
 import { randomBytes } from 'node:crypto';
 import * as vscode from 'vscode';
 import { parseWebviewMessage, type WebviewCommand, type WebviewMessage } from '../ui/messages.js';
-import { renderControlCenter } from '../ui/render.js';
+import { controlCenterAnnouncement, renderControlCenter, renderControlCenterBody } from '../ui/render.js';
 import { toggleInSet, buildViewModel, NO_FILTERS, type Filters, type IntentInput } from '../ui/view-model.js';
 import type { Logger} from './runtime.js';
 import { readSettings, revealLine, t } from './runtime.js';
+import { scopeLabel } from '../core/project.js';
+import type { ProjectSelection } from './project.js';
 import type { RemoteEvidence } from './remote.js';
 import type { ScanStore } from './store.js';
 import { COMMANDS } from './tree.js';
@@ -14,6 +16,10 @@ export const HOME_VIEW_TYPE = 'orquestivo.home';
 const WEBVIEW_COMMAND_IDS: Readonly<Record<WebviewCommand, string>> = {
   analyze: COMMANDS.analyze,
   generate: COMMANDS.generate,
+  selectProject: COMMANDS.selectProject,
+  openFolder: 'workbench.action.files.openFolder',
+  undoImprovement: COMMANDS.undoImprovement,
+  manageTrust: 'workbench.trust.manage',
   connectGitHub: COMMANDS.connectGitHub,
   disconnectGitHub: COMMANDS.disconnectGitHub,
   fetchRuns: COMMANDS.fetchRuns,
@@ -22,6 +28,7 @@ const WEBVIEW_COMMAND_IDS: Readonly<Record<WebviewCommand, string>> = {
 export interface ControlCenterSources {
   readonly store: ScanStore;
   readonly remote: RemoteEvidence;
+  readonly selection: ProjectSelection;
   readonly intent: () => IntentInput;
 }
 
@@ -29,6 +36,8 @@ export interface ControlCenterSources {
 export class ControlCenter implements vscode.Disposable {
   private panel: vscode.WebviewPanel | undefined;
   private filters: Filters = NO_FILTERS;
+  /** Display language the current webview shell was rendered for; undefined until the shell exists. */
+  private shellLanguage: string | undefined;
 
   constructor(
     private readonly extensionUri: vscode.Uri,
@@ -43,16 +52,21 @@ export class ControlCenter implements vscode.Disposable {
       { enableScripts: true, localResourceRoots: [mediaRoot] });
     this.panel = panel;
     panel.webview.onDidReceiveMessage((raw: unknown) => { void this.handle(parseWebviewMessage(raw)); });
-    panel.onDidDispose(() => { this.panel = undefined; });
+    panel.onDidDispose(() => { this.panel = undefined; this.shellLanguage = undefined; });
+    // A hidden webview drops its DOM and updates posted meanwhile; rebuild the shell when it becomes visible again.
+    panel.onDidChangeViewState((e) => { if (e.webviewPanel.visible) { this.shellLanguage = undefined; this.refresh(); } });
     this.refresh();
   }
 
   refresh(): void {
     const panel = this.panel;
     if (!panel) return;
-    const { store, remote, intent } = this.sources;
+    const { store, remote, intent, selection } = this.sources;
     const settings = readSettings();
+    const scope = selection.current;
     const model = buildViewModel({
+      project: { kind: scope?.kind ?? 'none', label: scopeLabel(scope) },
+      cancelled: store.cancelled,
       files: store.entries.map((e) => e.file),
       scanned: store.scanned,
       trusted: vscode.workspace.isTrusted,
@@ -66,10 +80,17 @@ export class ControlCenter implements vscode.Disposable {
     });
     const logo = panel.webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'icon-128.png'));
     panel.title = t('panelTitle');
-    panel.webview.html = renderControlCenter(model, {
+    const env = {
       nonce: randomBytes(16).toString('base64'), cspSource: panel.webview.cspSource,
       language: vscode.env.language, logoUri: logo.toString(), t,
-    });
+    };
+    // After the first render only the <main> markup is replaced, so tab, focus, scroll and open sections survive.
+    if (this.shellLanguage === vscode.env.language) {
+      void panel.webview.postMessage({ type: 'update', html: renderControlCenterBody(model, env), announce: controlCenterAnnouncement(model, t) });
+      return;
+    }
+    this.shellLanguage = vscode.env.language;
+    panel.webview.html = renderControlCenter(model, env);
   }
 
   private async handle(message: WebviewMessage | undefined): Promise<void> {
@@ -95,6 +116,9 @@ export class ControlCenter implements vscode.Disposable {
         return; // The configuration listener re-renders.
       case 'explainFinding':
         await vscode.commands.executeCommand(COMMANDS.explainFinding, { file: message.file, index: message.index });
+        return;
+      case 'previewFix':
+        await vscode.commands.executeCommand(COMMANDS.improveFinding, { file: message.file, index: message.index });
         return;
       case 'command':
         await vscode.commands.executeCommand(WEBVIEW_COMMAND_IDS[message.command]);

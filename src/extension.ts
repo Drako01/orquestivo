@@ -5,6 +5,8 @@ import { ControlCenter } from './vscode/control-center.js';
 import { DiagnosticsPublisher, FixActionProvider } from './vscode/diagnostics.js';
 import { GeneratorWizard, PreviewContent } from './vscode/generator.js';
 import { registerIntegrationPrompts } from './vscode/e2e-prompts.js';
+import { ProjectSelection } from './vscode/project.js';
+import { RemediationService } from './vscode/remediation.js';
 import { RemoteEvidence } from './vscode/remote.js';
 import { Logger, relativePath, resolveWorkspaceUri, revealLine, t } from './vscode/runtime.js';
 import { ScanService } from './vscode/scan-service.js';
@@ -20,11 +22,14 @@ export function activate(context: vscode.ExtensionContext): void {
   const log = new Logger();
   const store = new ScanStore();
   const diagnostics = new DiagnosticsPublisher();
-  const scan = new ScanService(store, diagnostics, log);
-  const remote = new RemoteEvidence(context.secrets, log);
-  const center = new ControlCenter(context.extensionUri, { store, remote, intent: () => scan.intent }, log);
+  const selection = new ProjectSelection(context.workspaceState);
+  const scan = new ScanService(store, diagnostics, selection, log);
+  const remote = new RemoteEvidence(context.secrets, log, () => selection.repoFolderUri);
+  const center = new ControlCenter(context.extensionUri, { store, remote, selection, intent: () => scan.intent }, log);
   const previews = new PreviewContent();
-  const wizard = new GeneratorWizard(context.workspaceState, previews, log, async () => { await scan.run(false); center.show(); });
+  const wizard = new GeneratorWizard(context.workspaceState, previews, log, async () => { await scan.run(false); center.show(); },
+    () => { const uri = selection.repoFolderUri; return uri ? vscode.workspace.getWorkspaceFolder(uri) : undefined; });
+  const remediation = new RemediationService(context.workspaceState, store, previews, () => selection.current, log, async () => { await scan.run(false); });
   const ai = new AiExplainer(store);
   const tree = new FindingsTree(store);
 
@@ -43,8 +48,9 @@ export function activate(context: vscode.ExtensionContext): void {
   };
 
   context.subscriptions.push(
-    log, store, diagnostics, remote, center, treeView, new StatusBar(store),
+    log, store, diagnostics, remote, center, treeView, new StatusBar(store), selection, scan,
     { dispose: () => clearTimeout(rescanTimer) },
+    selection.onDidChange(() => { remote.reset(); center.refresh(); void scan.run(false); }),
     treeView.onDidChangeVisibility(({ visible }) => { if (visible) showHome(); }),
     store.onDidChange(() => center.refresh()),
     remote.onDidChange(() => center.refresh()),
@@ -59,6 +65,9 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand(COMMANDS.openHome, showHome),
     vscode.commands.registerCommand(COMMANDS.analyze, async () => { await scan.run(true); center.show(); }),
     vscode.commands.registerCommand(COMMANDS.generate, () => wizard.generate()),
+    vscode.commands.registerCommand(COMMANDS.selectProject, () => selection.pick()),
+    vscode.commands.registerCommand(COMMANDS.improveFinding, (arg?: unknown) => remediation.improve(arg)),
+    vscode.commands.registerCommand(COMMANDS.undoImprovement, () => remediation.undo()),
     vscode.commands.registerCommand(COMMANDS.undoGeneration, () => wizard.undo()),
     vscode.commands.registerCommand(COMMANDS.connectGitHub, () => remote.connect()),
     vscode.commands.registerCommand(COMMANDS.disconnectGitHub, () => remote.disconnect()),

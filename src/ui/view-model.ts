@@ -3,6 +3,7 @@ import { evaluateIntent, type IntentContract, type IntentIssue, type IntentResul
 import type { RemoteContext } from '../core/evidence/run-evidence.js';
 import { aggregateResults, type Verdict } from '../core/evidence/verdict.js';
 import type { PipelineModel } from '../core/model.js';
+import { planRecommendations, summarizeAudit, type AuditSummary, type Proposal } from '../core/recommendations.js';
 import type { Category, Finding, Severity, WorkflowFileResult } from '../core/types.js';
 import type { ExperienceLevel } from './settings.js';
 
@@ -16,6 +17,8 @@ export interface ScanFile {
   readonly result: WorkflowFileResult;
   readonly providerName: string;
   readonly model?: PipelineModel | undefined;
+  /** Indexes of findings with a verified previewable fix. */
+  readonly fixable?: readonly number[] | undefined;
 }
 
 export type IntentInput =
@@ -37,7 +40,16 @@ export interface Filters {
 }
 export const NO_FILTERS: Filters = { severities: new Set(), categories: new Set() };
 
+/** The project the whole view is about. Absent in views built without project context (e.g. tests). */
+export interface ProjectView {
+  readonly kind: 'project' | 'workspace' | 'none';
+  readonly label: string;
+}
+
 export interface ViewInput {
+  readonly project?: ProjectView | undefined;
+  /** The latest analysis was cancelled. */
+  readonly cancelled?: boolean | undefined;
   readonly files: readonly ScanFile[];
   readonly scanned: boolean;
   readonly trusted: boolean;
@@ -86,11 +98,14 @@ export interface ViewModel {
   readonly categoryCounts: Readonly<Record<Category, number>>;
   readonly providers: readonly string[];
   readonly intentGroups: readonly IntentGroupView[];
+  readonly audit: AuditSummary;
+  /** Prioritised, de-duplicated plan derived from the real findings (guidance only). */
+  readonly proposals: readonly Proposal[];
 }
 
 const emptyCounts = (): Record<Severity, number> => ({ error: 0, warning: 0, information: 0 });
 
-export function matchesFilters(finding: Finding, filters: Filters): boolean {
+export function matchesFilters(finding: Pick<Finding, 'severity' | 'category'>, filters: Filters): boolean {
   return (filters.severities.size === 0 || filters.severities.has(finding.severity))
     && (filters.categories.size === 0 || filters.categories.has(finding.category));
 }
@@ -151,5 +166,7 @@ export function buildViewModel(input: ViewInput): ViewModel {
     categoryCounts,
     providers: [...new Set(input.files.map((f) => f.providerName))],
     intentGroups: buildIntentGroups(input),
+    audit: summarizeAudit({ trusted: input.trusted, scanned: input.scanned, files: input.files, truncated: input.truncated !== undefined }),
+    proposals: planRecommendations(input.files).filter((p) => matchesFilters(p, input.filters)),
   };
 }

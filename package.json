@@ -2,7 +2,7 @@
   "name": "orquestivo",
   "displayName": "Orquestivo",
   "description": "Design, inspect, and verify CI/CD workflows with evidence-backed diagnostics.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "armotusitio",
   "author": {
     "name": "Alejandro Daniel Di Stefano",
@@ -74,6 +74,22 @@
         "icon": "$(add)"
       },
       {
+        "command": "orquestivo.selectProject",
+        "title": "%command.selectProject%",
+        "category": "Orquestivo",
+        "icon": "$(root-folder)"
+      },
+      {
+        "command": "orquestivo.improveFinding",
+        "title": "%command.improve%",
+        "category": "Orquestivo"
+      },
+      {
+        "command": "orquestivo.undoImprovement",
+        "title": "%command.undoImprovement%",
+        "category": "Orquestivo"
+      },
+      {
         "command": "orquestivo.undoLastGeneration",
         "title": "%command.undo%",
         "category": "Orquestivo"
@@ -142,6 +158,10 @@
       "commandPalette": [
         {
           "command": "orquestivo.openFinding",
+          "when": "false"
+        },
+        {
+          "command": "orquestivo.improveFinding",
           "when": "false"
         }
       ]

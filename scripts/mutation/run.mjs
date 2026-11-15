@@ -53,8 +53,17 @@ async function mutateTarget(target, limits) {
   if (!existsSync(join(ROOT, 'dist-test', outRel))) return { source: target.source, status: STATUS.INCONCLUSIVE, reason: 'dist-test is stale or missing; run scripts/build-tests.mjs' };
 
   const original = readFileSync(sourcePath, 'utf8');
-  const baseline = nodeTest(tests, limits.timeoutMs * 2);
-  if (baseline.code !== 0) return { source: target.source, status: STATUS.FAIL, reason: 'baseline tests fail without mutation', tail: baseline.output.slice(-800) };
+  let baseline = nodeTest(tests, limits.timeoutMs * 2);
+  if (baseline.code !== 0) {
+    // Several workers share one small CI runner, so wall-clock budgets in the baseline tests can trip under load.
+    // A real regression fails again on the unmutated code; a load spike does not. Keep the first failure's output.
+    console.error(`[mutation] ${target.source}: baseline failed, retrying once. Tail:\n${baseline.output.slice(-1500)}`);
+    baseline = nodeTest(tests, limits.timeoutMs * 2);
+  }
+  if (baseline.code !== 0) {
+    console.error(`[mutation] ${target.source}: baseline failed twice. Tail:\n${baseline.output.slice(-1500)}`);
+    return { source: target.source, status: STATUS.FAIL, reason: 'baseline tests fail without mutation', tail: baseline.output.slice(-800) };
+  }
 
   const sites = findMutations(original);
   const sampled = sample(sites, limits.max);

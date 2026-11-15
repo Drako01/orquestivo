@@ -9,7 +9,7 @@
 
 <p align="center">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-7C8CF8">
-  <img alt="Version 0.2.0" src="https://img.shields.io/badge/version-0.2.0-14181D">
+  <img alt="Version 0.3.0" src="https://img.shields.io/badge/version-0.3.0-14181D">
   <img alt="Visual Studio Code 1.99+" src="https://img.shields.io/badge/VS_Code-1.99%2B-14181D">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178C6">
 </p>
@@ -33,10 +33,21 @@ A pipeline can be valid YAML and still be **unsafe, fragile or incorrect for its
 
 Orquestivo reports **static inference** by default. It does not run your pipeline. Only opt-in, read-only evidence from real GitHub Actions runs can back a statement about what actually happened, and even then it does not prove business requirements are met.
 
+## How to use it in four steps
+
+1. **Pick the project.** The Control Center shows the project being audited (a single folder is selected automatically). With several folders or a monorepo press **Change project**; the choice is remembered per workspace and "entire workspace" is a deliberate option.
+2. **Press _Analyze existing CI/CD_.** Analysis is local and read-only: no pipeline is run and no GitHub login, token or AI is needed. Prefer a new pipeline? Use **Create new CI**.
+3. **Read the review.** The status is honest (*Needs attention*, *Partial*, *No problems detected by the available rules*, *No CI/CD found* or *Not evaluated*) and **What to fix first** lists the most important items with why they matter and what to change.
+4. **Apply a safe fix, or fix it by hand.** For a small set of verified fixes press **Review and apply fix**: Orquestivo opens a diff, asks for explicit confirmation, refuses to write if the file changed meanwhile, re-analyzes, and **Undo last improvement** reverts it unless you edited the file afterwards (the undo record survives reloading VS Code). Verified fixes: GitHub Actions `permissions` and job `timeout-minutes`; GitLab CI default `timeout` and artifact `expire_in`; Azure Pipelines `timeoutInMinutes`; Jenkins `timeout` and `buildDiscarder` options. Every other item is manual guidance, with no apply button.
+
+The Control Center is organised in tabs: **Summary**, **Findings**, **Improvements**, **Pipeline**, **Evidence** and **Advanced**. Refreshes keep your tab, focused control, scroll position and expanded sections.
+
 ## What it does
 
 | Area | Capability |
 | --- | --- |
+| Project-aware audit | Project selector (multi-root, monorepo sub-projects), results, intent contract and generator default scoped to the selected project; stale scans are discarded when you switch |
+| Guided improvements | Prioritised plan from real findings; verified diff-first fixes for seven rules across GitHub Actions, GitLab CI, Azure Pipelines and Jenkins, each re-analyzed before it is offered, with hash guard and persistent undo. No fix is invented for any other rule |
 | Script-injection checks | Flags attacker-controlled values (`github.head_ref`, `inputs.*`, issue and pull request text, `workflow_run` data) interpolated into `run` scripts and `actions/github-script` programs, even inside `format()` or bracket access. Textual, no data-flow: see [docs/ANALYSIS.md](docs/ANALYSIS.md#untrusted-contexts-expression_in_script) |
 | Multi-provider analysis | **GitHub Actions** (69 rule codes), **GitLab CI/CD**, **Azure Pipelines** and **Jenkins** (declarative Jenkinsfile). Rule details: [docs/ANALYSIS.md](docs/ANALYSIS.md), [docs/PROVIDERS.md](docs/PROVIDERS.md) |
 | Control Center | Webview with an accessible pipeline diagram (with a textual alternative) and three explanation levels: **beginner**, **advanced**, **expert** |
@@ -52,6 +63,8 @@ Commands (Command Palette, category "Orquestivo"):
 | Command ID | Purpose |
 | --- | --- |
 | `orquestivo.analyze` | Analyze CI pipeline files in the workspace |
+| `orquestivo.selectProject` | Choose which project (folder, monorepo sub-project or whole workspace) is audited |
+| `orquestivo.undoImprovement` | Undo the last applied improvement (refuses if the file was edited afterwards) |
 | `orquestivo.generateCI` | Open the generator wizard |
 | `orquestivo.openHome` | Open the Control Center |
 | `orquestivo.connectGitHub` | Store a GitHub token in SecretStorage (opt-in) |
@@ -60,13 +73,13 @@ Commands (Command Palette, category "Orquestivo"):
 | `orquestivo.undoLastGeneration` | Undo the files created by the last generation |
 | `orquestivo.ai.explainFinding` | Ask the configured AI provider to explain a finding (only if enabled) |
 
-> Command registration and UI wording were being implemented while this document was written. Cross-check the live list in `package.json` (`contributes.commands`). `orquestivo.openFinding` is an internal navigation command.
+> Command registration and UI wording were being implemented while this document was written. Cross-check the live list in `package.json` (`contributes.commands`). `orquestivo.openFinding` and `orquestivo.improveFinding` are internal commands used by the Control Center.
 
 Diagnostics identify supported static patterns. A clean scan **does not mean** a pipeline has run, is secure in every context or will deploy successfully.
 
 ## Screenshots
 
-A look at Orquestivo. Images 1–3 are real VS Code captures from the earlier 0.1.0 release; images 4–8 show the current Control Center, rendered from the product's own HTML (`src/ui`) with a real analysis of sample workflows and a VS Code dark theme palette. They are not full VS Code window captures; regenerate them with `scripts/render-readme-media.mjs`. Click any image to open it at full resolution.
+A look at Orquestivo. Images 1–3 are real VS Code captures from the earlier 0.1.0 release; images 4–11 show the current Control Center, rendered from the product's own HTML (`src/ui`) with a real analysis of sample workflows and a VS Code dark theme palette. They are not full VS Code window captures; regenerate them with `scripts/render-readme-media.mjs`. Click any image to open it at full resolution.
 
 ### 1. Control Center — scan overview
 
@@ -107,7 +120,7 @@ Counts by severity, filters by severity and category, and each finding with why 
 
 <p align="center">
   <a href="media/04-control-center-overview.png">
-    <img src="media/04-control-center-overview.png" alt="Orquestivo Control Center in dark theme with 1 pipeline file, 1 error, 8 warnings, 5 informational findings, severity and category filters and the first detailed findings." width="940" />
+    <img src="media/04-control-center-overview.png" alt="Orquestivo Control Center in dark theme, Findings tab selected, with 1 pipeline file, 1 error, 8 warnings, 5 informational findings, severity and category filters and the first detailed findings." width="940" />
   </a>
 </p>
 <p align="center"><sub>Control Center · Resumen, filtros y hallazgos explicados</sub></p>
@@ -157,6 +170,41 @@ GitHub Actions, GitLab CI/CD and Jenkins files analysed together: provider chips
 <p align="center"><sub>Multi-proveedor · Un solo análisis para varios CI</sub></p>
 
 > Images 1–3 predate the multi-provider Control Center, the wizard diff preview and the evidence features. None of these images demonstrates execution, deployment or verification of a pipeline's intended outcome; the guided wizard and the Problems panel in a real VS Code window are covered by the integration suite rather than by a screenshot.
+
+### 9. Audit status — what to fix first
+
+For an existing project, the Summary tab ranks the findings by priority and says where each one is, why it matters and what to change. Items that have a verified automatic fix offer **Review and apply fix**; a diff is shown first and nothing changes until you confirm. The *Beginner* experience level is shown.
+
+<p align="center">
+  <a href="media/09-project-audit-plan.png">
+    <img src="media/09-project-audit-plan.png" alt="Orquestivo Control Center Summary tab for the project my-app showing the Needs attention status and a prioritized What to fix first list: an unpinned action as manual review, and two low-priority items, missing permissions and a missing job timeout, each with a Review and apply fix button." width="940" />
+  </a>
+</p>
+<p align="center"><sub>Resumen · Qué corregir primero, con arreglos que se revisan antes de aplicar</sub></p>
+
+### 10. Project without CI
+
+When the selected project has no supported pipeline file, the Control Center says so and offers to create one with the guided generator.
+
+<p align="center">
+  <a href="media/10-no-ci.png">
+    <img src="media/10-no-ci.png" alt="Orquestivo Control Center Summary tab for the project my-app reporting No CI/CD found, with a Create new CI button." width="940" />
+  </a>
+</p>
+<p align="center"><sub>Proyecto sin CI · Invitación a crear uno nuevo</sub></p>
+
+### 11. No folder open
+
+When no folder is open, the Control Center says so, offers **Open project** and reports the review as not evaluated instead of showing an empty result.
+
+<p align="center">
+  <a href="media/11-no-folder.png">
+    <img src="media/11-no-folder.png" alt="Orquestivo Control Center with no folder open, showing an Open project button and the review status Not evaluated." width="940" />
+  </a>
+</p>
+<p align="center"><sub>Sin carpeta · Selección de proyecto</sub></p>
+
+> The diff-first fix preview opens in VS Code's own diff editor, not in the Control Center, so it is not part of this gallery; it is covered by the integration suite.
 
 ## Quick start
 

@@ -1,6 +1,6 @@
 # Usage guide
 
-Orquestivo is an unreleased preview; install it from a locally built VSIX ([README](../README.md#quick-start)). Everything below assumes a **trusted** workspace. Command names follow the planned surface; if a title differs in your build, search "Orquestivo" in the Command Palette and check `contributes.commands` in `package.json`.
+Orquestivo is a pre-1.0 release (see the [changelog](../CHANGELOG.md) for the current version); install it from the Marketplace/Open VSX or a locally built VSIX ([README](../README.md#quick-start)). Everything below assumes a **trusted** workspace. Command names follow the planned surface; if a title differs in your build, search "Orquestivo" in the Command Palette and check `contributes.commands` in `package.json`.
 
 ## 1. Analyze your pipelines
 
@@ -25,6 +25,12 @@ A clean result means supported static rules found nothing. It does not mean the 
 Open it from the Activity Bar icon or **Orquestivo: Open Control Center** (`orquestivo.openHome`). It shows counts, findings and the pipeline diagram. The diagram has a textual alternative for keyboard and screen-reader users.
 
 Explanation level (planned: beginner, advanced, expert) changes how much detail each finding shows: beginner favors plain language and the "why it matters"; advanced adds the recommendation and documentation link; expert adds rule code, evidence basis and location. The level is a presentation choice and never changes what is detected.
+
+### Project, status and improvements
+
+- **Project:** the header shows the audited project. **Change project** (or `Orquestivo: Select project to analyze`) lists workspace folders, monorepo sub-projects found by bounded CI-file discovery, and an explicit "entire workspace" option. The choice is stored per workspace. Switching discards previous results, diagnostics, the intent contract and fetched runs.
+- **Status:** *Needs attention*, *Partial*, *No problems detected by the available rules* (never "perfect": only static rules ran), *No CI/CD found* (offers **Create new CI**) or *Not evaluated*.
+- **Improvements:** items are ordered by priority and security first. Only `PERMISSIONS_UNDECLARED`, `TIMEOUT_UNSET` (GitHub Actions), `GITLAB_NO_TIMEOUT`, `GITLAB_ARTIFACT_NO_EXPIRY`, `AZURE_NO_TIMEOUT`, `JENKINS_NO_TIMEOUT` and `JENKINS_NO_BUILD_DISCARDER` can offer **Review and apply fix**, and only when the edit is provably safe for that file's shape (flow-style YAML, existing `default:` or `options` blocks and similar cases fall back to manual guidance); the fix is built and re-analyzed in memory (it must remove the finding and add none), shown as a diff, and written only after a modal confirmation if the file is byte-identical to what was analyzed. **Undo last improvement** reverts it unless the file was edited since (the undo record is kept in workspace state, so it survives reloads; records over about 400 KB are kept in memory only). The Control Center has six tabs (Summary, Findings, Improvements, Pipeline, Evidence, Advanced) and updates keep your tab, focus, scroll and open sections. Specific notices cover untrusted workspaces (with **Manage workspace trust**), cancelled analyses and files that could not be read.
 
 ## 3. Intent contracts
 
@@ -73,7 +79,7 @@ Logs are not downloaded. See [../PRIVACY.md](../PRIVACY.md).
 1. Run **Orquestivo: Generate CI** (`orquestivo.generateCI`).
 2. Pick a preset: `node`, `typescript`, `react`, `next`, `go`, `python`, `java-maven`, `java-gradle`, `php` or `docker`. The wizard shows which marker files were detected and which parts need real execution.
 3. Choose options (triggers, package manager, matrix, lint/build/test, cache, security scan, artifacts, deploy). Options a preset does not support are rejected.
-4. Review the **diff preview**. Nothing is written until you confirm, and existing files are never overwritten.
+4. Review the **diff preview**. Nothing is written until you confirm. If the target file already exists, overwriting it needs a separate, explicit confirmation showing the diff; the last generation can be undone.
 5. To revert, run **Orquestivo: Undo last generation** (`orquestivo.undoLastGeneration`).
 
 Generated workflows use SHA-pinned actions, least-privilege permissions, job timeouts and concurrency. Some options need a verified commit SHA you provide; otherwise the wizard refuses rather than guessing. The deploy template is a placeholder that fails until you replace it. Details: [GENERATOR.md](GENERATOR.md).

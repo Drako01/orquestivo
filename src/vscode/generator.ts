@@ -76,7 +76,7 @@ async function writeWorkspaceFile(uri: vscode.Uri, content: string): Promise<boo
  * True when `relativePath` stays inside `folder` after following symlinks and junctions. Virtual file systems
  * (non-`file` schemes) have no links to follow, so the workspace API itself is the boundary there.
  */
-function isInsideFolder(folder: vscode.Uri, relativePath: string): boolean {
+export function isInsideFolder(folder: vscode.Uri, relativePath: string): boolean {
   return folder.scheme !== 'file' || resolveInside(folder.fsPath, relativePath, realpathSync).ok;
 }
 
@@ -89,13 +89,15 @@ export class GeneratorWizard {
     private readonly log: Logger,
     /** Called after the workspace changed (write or undo) so views can rescan. */
     private readonly onChanged: () => Promise<void>,
+    /** Workspace folder of the selected project; the wizard defaults to it instead of asking again. */
+    private readonly selectedFolder: () => vscode.WorkspaceFolder | undefined = () => undefined,
   ) {}
 
   async generate(): Promise<void> {
     if (!vscode.workspace.isTrusted) { await vscode.window.showWarningMessage(t('untrusted')); return; }
     const folders = vscode.workspace.workspaceFolders;
     if (!folders?.length) { await vscode.window.showWarningMessage(t('noFolder')); return; }
-    const folder = folders.length === 1 ? folders[0] : await vscode.window.showWorkspaceFolderPick();
+    const folder = folders.length === 1 ? folders[0] : this.selectedFolder() ?? await vscode.window.showWorkspaceFolderPick();
     if (!folder) return;
 
     const detection = await this.detect(folder.uri);

@@ -4,6 +4,7 @@ import type { RunEvidence } from '../core/evidence/run-evidence.js';
 import type { EvidenceBasis, Verdict } from '../core/evidence/verdict.js';
 import type { Category, Finding, Severity, VerificationState } from '../core/types.js';
 import type { TextKey, Translate } from '../i18n.js';
+import type { AuditStatus, Priority, Proposal } from '../core/recommendations.js';
 import { redactSecrets } from '../security/redact.js';
 import { CLIENT_SCRIPT } from './client-script.js';
 import { escapeHtml as esc, safeHttpUrl } from './escape.js';
@@ -96,14 +97,15 @@ function renderFile(file: FileView, level: ExperienceLevel, aiEnabled: boolean, 
   const syntax = file.syntaxValid ? '' : `<p class="banner warn" role="note">${esc(t('fileSyntaxInvalid'))}</p>`;
   return `<section class="panel" aria-labelledby="file-${file.id}">`
     + `<div class="file-head"><h3 id="file-${file.id}">${esc(file.path)}</h3><span class="badge">${esc(file.providerName)}</span>`
-    + `<span class="muted">${esc(counts)}</span></div>${syntax}${body}${renderPipeline(file, t)}</section>`;
+    + `<span class="muted">${esc(counts)}</span></div>${syntax}${body}</section>`;
 }
 
 function renderPipeline(file: FileView, t: Translate): string {
   if (!file.graph) return '';
-  return `<h4>${esc(t('pipelineTitle'))}</h4><p class="muted">${esc(t('pipelineNote'))}</p>`
+  return `<section class="panel" aria-labelledby="pipe-${file.id}"><h3 id="pipe-${file.id}">${esc(file.path)}</h3>`
+    + `<h4>${esc(t('pipelineTitle'))}</h4><p class="muted">${esc(t('pipelineNote'))}</p>`
     + `<div class="graph-wrap" tabindex="0" role="region" aria-label="${esc(t('pipelineRegion', { path: file.path }))}">${renderGraphSvg(file.graph, file.id, t)}</div>`
-    + `<details><summary>${esc(t('pipelineTextAlt'))}</summary><pre>${esc(renderGraphText(file.graph))}</pre></details>`;
+    + `<details id="pipe-text-${file.id}"><summary>${esc(t('pipelineTextAlt'))}</summary><pre>${esc(renderGraphText(file.graph))}</pre></details></section>`;
 }
 
 function renderFilters(vm: ViewModel, t: Translate): string {
@@ -175,7 +177,7 @@ function renderRemote(vm: ViewModel, t: Translate): string {
 }
 
 function renderPolicies(vm: ViewModel, t: Translate): string {
-  if (vm.input.level !== 'expert') return '';
+  if (vm.input.level !== 'expert') return `<p class="muted">${esc(t('advancedHint'))}</p>`;
   const { policy, remote, aiEnabled } = vm.input;
   const items = [
     t('policyStatic'), t('policyLimits', { files: policy.maxFiles, bytes: policy.maxFileBytes }),
@@ -184,43 +186,147 @@ function renderPolicies(vm: ViewModel, t: Translate): string {
   return `<section class="panel" aria-labelledby="policy-title"><h2 id="policy-title">${esc(t('policiesTitle'))}</h2><ul>${items.map((i) => `<li>${esc(i)}</li>`).join('')}</ul></section>`;
 }
 
-function announcement(vm: ViewModel, t: Translate): string {
+const AUDIT_KEYS: Readonly<Record<AuditStatus, readonly [TextKey, TextKey]>> = {
+  'not-evaluated': ['auditNotEvaluated', 'auditNotEvaluatedDetail'],
+  'no-ci': ['auditNoCi', 'auditNoCiDetail'],
+  attention: ['auditAttention', 'auditAttentionDetail'],
+  partial: ['auditPartial', 'auditPartialDetail'],
+  'no-findings': ['auditNoFindings', 'auditNoFindingsDetail'],
+};
+const AUDIT_ICON: Readonly<Record<AuditStatus, string>> = { 'not-evaluated': '?', 'no-ci': '○', attention: '▲', partial: '◐', 'no-findings': '✔' };
+const PRIORITY_KEY: Readonly<Record<Priority, TextKey>> = { P0: 'priorityP0', P1: 'priorityP1', P2: 'priorityP2' };
+const TOP_PRIORITIES = 3;
+
+function renderProject(vm: ViewModel, t: Translate): string {
+  const project = vm.input.project;
+  if (!project) return '';
+  if (project.kind === 'none') {
+    return `<section class="panel" aria-labelledby="project-title"><h2 id="project-title">${esc(t('projectLabel'))}</h2>`
+      + `<p class="empty">${esc(t('projectNone'))}. ${esc(t('noFolderHelp'))}</p>`
+      + `<div class="toolbar">${button('cmd-open-folder', t('projectOpen'), 'data-action="command" data-command="openFolder"', true)}</div></section>`;
+  }
+  const label = project.kind === 'workspace' ? `${t('projectWorkspaceScope')}: ${project.label}` : project.label;
+  return `<section class="panel" aria-labelledby="project-title"><h2 id="project-title">${esc(t('projectLabel'))}</h2>`
+    + `<p class="project-name"><strong>${esc(label)}</strong> `
+    + `${button('cmd-select-project', t('projectChange'), 'data-action="command" data-command="selectProject"')}</p></section>`;
+}
+
+function renderProposal(p: Proposal, id: string, level: ExperienceLevel, t: Translate): string {
+  const advanced = level === 'beginner' ? '' : ` <code>${esc(p.code)}</code> <span class="chip">${esc(t(CATEGORY_KEY[p.category]))}</span>`;
+  const suggestion = p.suggestion && level !== 'beginner'
+    ? `<dt>${esc(t('planSuggestion'))}</dt><dd><pre>${esc(redactSecrets(p.suggestion))}</pre></dd>` : '';
+  return `<li class="finding sev-${p.severity}" id="${id}">`
+    + `<div class="finding-head"><span class="badge">${esc(t(PRIORITY_KEY[p.priority]))}</span>${advanced} <span>${esc(redactSecrets(p.message))}</span></div>`
+    + `<dl><dt>${esc(t('planWhere'))}</dt><dd>${esc(p.path)}:${p.line} `
+    + `${button(`${id}-open`, t('actionOpenLine'), `data-action="open" data-file="${p.fileId}" data-line="${p.line}"`)}</dd>`
+    + `<dt>${esc(t('planWhy'))}</dt><dd>${esc(redactSecrets(p.rationale))}</dd>`
+    + `<dt>${esc(t('planWhat'))}</dt><dd>${esc(redactSecrets(p.recommendation))}</dd>${suggestion}</dl>`
+    + (p.automation === 'preview-required'
+      ? `<p>${button(`${id}-fix`, t('fixAction'), `data-action="fix" data-file="${p.fileId}" data-index="${p.index}"`, true)} <span class="muted">${esc(t('fixPreviewNote'))}</span></p>`
+      : `<p class="muted">${esc(t('planManual'))}</p>`)
+    + `</li>`;
+}
+
+function renderAudit(vm: ViewModel, t: Translate): string {
+  const { audit, proposals } = vm;
+  const [titleKey, detailKey] = AUDIT_KEYS[audit.status];
+  const detail = t(detailKey, { count: audit.needsAttention });
+  const scope = vm.input.scanned && vm.files.length > 0
+    ? `<p class="muted">${esc(t('files'))}: ${vm.totals.files} · ${esc(t('providersLabel'))}: ${esc(vm.providers.join(', '))}</p>` : '';
+  const incomplete = audit.incomplete && audit.status !== 'partial' ? `<p class="banner warn" role="note">${esc(t('auditIncomplete'))}</p>` : '';
+  const unreadable = audit.unreadable > 0 ? `<p class="banner warn notice" role="note">${esc(t('noticeUnreadable', { count: audit.unreadable }))}</p>` : '';
+  const create = audit.status === 'no-ci' ? `<div class="toolbar">${button('cmd-create-ci', t('createNewCi'), 'data-action="command" data-command="generate"', true)}</div>` : '';
+  const top = proposals.slice(0, TOP_PRIORITIES);
+  const plan = top.length === 0 ? '' : `<h3>${esc(t('planTitle'))}</h3><ol class="list">${top.map((p, i) => renderProposal(p, `top-${i}`, vm.input.level, t)).join('')}</ol>`;
+  return `<section class="panel" aria-labelledby="audit-title"><h2 id="audit-title">${esc(t('auditTitle'))}</h2>`
+    + `<p class="audit-status" role="status"><strong><span aria-hidden="true">${AUDIT_ICON[audit.status]}</span> ${esc(t(titleKey))}</strong></p>`
+    + `<p>${esc(detail)}</p>${scope}${incomplete}${unreadable}${create}${plan}</section>`;
+}
+
+/** Every improvement, plus the undo action; the Summary tab only shows the first few. */
+function renderImprovements(vm: ViewModel, t: Translate): string {
+  const { proposals } = vm;
+  const undo = vm.input.scanned && vm.audit.status !== 'no-ci'
+    ? `<div class="toolbar">${button('cmd-undo-improvement', t('fixUndoAction'), 'data-action="command" data-command="undoImprovement"')}</div>` : '';
+  const list = proposals.length === 0 ? `<p class="empty">${esc(t(vm.input.scanned ? 'clean' : 'empty'))}</p>`
+    : `<ul class="list">${proposals.map((p, i) => renderProposal(p, `plan-${i}`, vm.input.level, t)).join('')}</ul>`;
+  return `<section class="panel" aria-labelledby="plan-title"><h2 id="plan-title">${esc(t('planAll'))}</h2>${undo}${list}</section>`;
+}
+
+export function controlCenterAnnouncement(vm: ViewModel, t: Translate): string {
   if (!vm.input.scanned) return '';
   return t('announceScan', { files: vm.totals.files, errors: vm.totals.error, warnings: vm.totals.warning, info: vm.totals.information });
 }
 
-/** Renders the complete Control Center document. Every dynamic value is escaped; scripts and styles run only via the nonce. */
-export function renderControlCenter(vm: ViewModel, env: RenderEnv): string {
-  const { t, nonce } = env;
+const TABS = ['summary', 'findings', 'improvements', 'pipeline', 'evidence', 'advanced'] as const;
+type Tab = typeof TABS[number];
+const TAB_KEY: Readonly<Record<Tab, TextKey>> = {
+  summary: 'tabSummary', findings: 'tabFindings', improvements: 'tabImprovements', pipeline: 'tabPipeline', evidence: 'tabEvidence', advanced: 'tabAdvanced',
+};
+
+/** Tablist + panels. All panels are in the DOM (the client script shows one), so content stays reachable and testable. */
+function renderTabs(vm: ViewModel, panels: Readonly<Record<Tab, string>>, t: Translate): string {
+  const counts: Partial<Record<Tab, number>> = { findings: vm.totals.findings, improvements: vm.proposals.length };
+  const buttons = TABS.map((tab, i) => {
+    const count = counts[tab] === undefined ? '' : ` (${counts[tab]})`;
+    return `<button type="button" role="tab" id="tab-${tab}" data-tab="${tab}" aria-controls="panel-${tab}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}">${esc(t(TAB_KEY[tab]))}${count}</button>`;
+  }).join('');
+  const bodies = TABS.map((tab, i) =>
+    `<div role="tabpanel" id="panel-${tab}" aria-labelledby="tab-${tab}" tabindex="0"${i === 0 ? '' : ' hidden'}>${panels[tab]}</div>`).join('');
+  return `<div class="tabs" role="tablist" aria-label="${esc(t('tabsLabel'))}">${buttons}</div>${bodies}`;
+}
+
+/** The content of `<main>`. Sent again (not the whole document) when data changes so the client keeps focus, tab and scroll. */
+export function renderControlCenterBody(vm: ViewModel, env: RenderEnv): string {
+  const { t } = env;
   const { input } = vm;
-  const lang = env.language.toLowerCase().startsWith('es') ? 'es' : 'en';
-  const csp = `default-src 'none'; img-src ${env.cspSource}; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}';`;
   const card = (value: number, key: TextKey): string => `<div class="card"><div class="value">${value}</div><div class="caption">${esc(t(key))}</div></div>`;
   const levelSelect = `<label for="level">${esc(t('levelLabel'))}</label><select id="level">${EXPERIENCE_LEVELS.map((l) =>
     `<option value="${l}"${l === input.level ? ' selected' : ''}>${esc(t(LEVEL_KEY[l]))}</option>`).join('')}</select>`;
 
   let results: string;
-  if (!input.trusted) results = `<p class="banner warn" role="alert">${esc(t('untrusted'))}</p>`;
+  if (!input.trusted) {
+    results = `<p class="banner warn" role="alert">${esc(t('untrusted'))}</p><p>${esc(t('untrustedHelp'))}</p>`
+      + `<div class="toolbar">${button('cmd-manage-trust', t('actionManageTrust'), 'data-action="command" data-command="manageTrust"', true)}</div>`;
+  }
   else if (!input.scanned) results = `<p class="empty">${esc(t('empty'))}</p>`;
   else if (vm.files.length === 0) results = `<p class="empty">${esc(t('noFiles'))}</p>`;
   else results = `${renderFilters(vm, t)}<h2>${esc(t('findings'))}</h2>${vm.files.map((f) => renderFile(f, input.level, input.aiEnabled, t)).join('')}`;
   const truncated = input.truncated
     ? `<p class="banner warn" role="note">${esc(t('scanTruncated', { scanned: input.truncated.scanned, total: input.truncated.total }))}</p>` : '';
 
+  const cancelled = input.cancelled ? `<p class="banner warn notice" role="status">${esc(t('noticeCancelled'))}</p>` : '';
+  const panels: Record<Tab, string> = {
+    summary: input.trusted ? renderAudit(vm, t) : results,
+    findings: `<section class="cards" aria-label="${esc(t('summaryLabel'))}">${card(vm.totals.files, 'files')}${card(vm.totals.error, 'errors')}${card(vm.totals.warning, 'warnings')}${card(vm.totals.information, 'info')}</section>`
+      + (vm.providers.length ? `<p class="muted">${esc(t('providersLabel'))}: ${vm.providers.map((p) => `<span class="badge">${esc(p)}</span>`).join(' ')}</p>` : '')
+      + (input.trusted ? results : ''),
+    improvements: input.trusted ? renderImprovements(vm, t) : '',
+    pipeline: vm.files.map((f) => renderPipeline(f, t)).join('') || `<p class="empty">${esc(t(input.scanned ? 'noFiles' : 'empty'))}</p>`,
+    evidence: `${renderIntent(vm, t)}${renderRemote(vm, t)}`,
+    advanced: renderPolicies(vm, t),
+  };
+  return `<header class="head"><img class="brand" src="${esc(env.logoUri)}" width="56" height="56" alt=""><div>`
+    + `<div class="eyebrow">ORQUESTIVO · CI/CD</div><h1>${esc(t('title'))}</h1><p class="muted">${esc(t('subtitle'))}</p></div></header>`
+    + renderProject(vm, t)
+    + `<div class="toolbar" role="toolbar" aria-label="${esc(t('toolbarLabel'))}">`
+    + (input.project?.kind === 'none' ? '' : `${button('cmd-analyze', t('scan'), 'data-action="command" data-command="analyze"', true)}`
+      + `${button('cmd-generate', t('createNewCi'), 'data-action="command" data-command="generate"')}`)
+    + `${levelSelect}</div>`
+    + `<p class="banner" role="note">${esc(t('scanLocalNote'))} ${esc(t('report'))}</p>${truncated}${cancelled}`
+    + renderTabs(vm, panels, t)
+    + `<footer>${esc(t('footerNote'))}</footer>`;
+}
+
+/** Renders the complete Control Center document. Every dynamic value is escaped; scripts and styles run only via the nonce. */
+export function renderControlCenter(vm: ViewModel, env: RenderEnv): string {
+  const { t, nonce } = env;
+  const lang = env.language.toLowerCase().startsWith('es') ? 'es' : 'en';
+  const csp = `default-src 'none'; img-src ${env.cspSource}; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}';`;
   return `<!DOCTYPE html><html lang="${lang}"><head><meta charset="utf-8">`
     + `<meta name="viewport" content="width=device-width,initial-scale=1.0">`
     + `<meta http-equiv="Content-Security-Policy" content="${esc(csp)}">`
     + `<title>${esc(t('panelTitle'))}</title><style nonce="${nonce}">${STYLES}</style></head>`
-    + `<body data-announce="${esc(announcement(vm, t))}"><main>`
-    + `<header class="head"><img class="brand" src="${esc(env.logoUri)}" width="56" height="56" alt=""><div>`
-    + `<div class="eyebrow">ORQUESTIVO · CI/CD</div><h1>${esc(t('title'))}</h1><p class="muted">${esc(t('subtitle'))}</p></div></header>`
-    + `<div id="live" class="sr-only" role="status" aria-live="polite"></div>`
-    + `<div class="toolbar" role="toolbar" aria-label="${esc(t('toolbarLabel'))}">`
-    + `${button('cmd-analyze', t('scan'), 'data-action="command" data-command="analyze"', true)}`
-    + `${button('cmd-generate', t('actionGenerate'), 'data-action="command" data-command="generate"')}${levelSelect}</div>`
-    + `<p class="banner" role="note">${esc(t('report'))}</p>${truncated}`
-    + `<section class="cards" aria-label="${esc(t('summaryLabel'))}">${card(vm.totals.files, 'files')}${card(vm.totals.error, 'errors')}${card(vm.totals.warning, 'warnings')}${card(vm.totals.information, 'info')}</section>`
-    + (vm.providers.length ? `<p class="muted">${esc(t('providersLabel'))}: ${vm.providers.map((p) => `<span class="badge">${esc(p)}</span>`).join(' ')}</p>` : '')
-    + `${results}${renderIntent(vm, t)}${renderRemote(vm, t)}${renderPolicies(vm, t)}`
-    + `<footer>${esc(t('footerNote'))}</footer></main><script nonce="${nonce}">${CLIENT_SCRIPT}</script></body></html>`;
+    + `<body data-announce="${esc(controlCenterAnnouncement(vm, t))}"><div id="live" class="sr-only" role="status" aria-live="polite"></div>`
+    + `<main id="app">${renderControlCenterBody(vm, env)}</main><script nonce="${nonce}">${CLIENT_SCRIPT}</script></body></html>`;
 }

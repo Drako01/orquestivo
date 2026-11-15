@@ -7,6 +7,16 @@ export class ScanStore implements vscode.Disposable {
   private readonly emitter = new vscode.EventEmitter<void>();
   readonly onDidChange = this.emitter.event;
   private outcome: ScanOutcome | undefined;
+  private wasCancelled = false;
+
+  /** True when the latest analysis was cancelled by the user (any results shown are from an earlier run). */
+  get cancelled(): boolean { return this.wasCancelled; }
+
+  markCancelled(): void {
+    if (this.wasCancelled) return;
+    this.wasCancelled = true;
+    this.emitter.fire();
+  }
 
   get scanned(): boolean { return this.outcome !== undefined; }
   get entries(): readonly ScanEntry[] { return this.outcome?.entries ?? []; }
@@ -17,6 +27,15 @@ export class ScanStore implements vscode.Disposable {
 
   set(outcome: ScanOutcome): void {
     this.outcome = outcome;
+    this.wasCancelled = false;
+    this.emitter.fire();
+  }
+
+  /** Drops the results (e.g. when the selected project changes) so nothing stale is shown. */
+  clear(): void {
+    if (!this.outcome && !this.wasCancelled) return;
+    this.outcome = undefined;
+    this.wasCancelled = false;
     this.emitter.fire();
   }
 

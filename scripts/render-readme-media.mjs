@@ -10,6 +10,7 @@ const { githubActionsProvider } = require('../dist-test/core/github/provider.js'
 const { buildViewModel, NO_FILTERS } = require('../dist-test/ui/view-model.js');
 const { renderControlCenter } = require('../dist-test/ui/render.js');
 const { tr } = require('../dist-test/i18n.js');
+const { fixableIndexes } = require('../dist-test/providers/remediation.js');
 const { providerRegistry } = require('../dist-test/providers/registry.js');
 
 const outDir = resolve(process.argv[2] ?? 'media-render');
@@ -133,7 +134,28 @@ const jenkinsfile = `pipeline {
 }
 `;
 
+// Existing workflow with typical gaps (no permissions, no timeouts): the plan offers verified, previewable fixes.
+const improvable = `name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - run: npm test
+`;
+const improvableEntry = entryFor(0, '.github/workflows/ci.yml', improvable);
+const improvableFixable = fixableIndexes(improvable, 'github-actions', improvableEntry.result.findings);
+
 const scenes = {
+  '09-project-audit-plan': {
+    ...base, level: 'beginner', project: { kind: 'project', label: 'my-app' },
+    files: [{ ...improvableEntry, fixable: improvableFixable }],
+  },
+  '10-no-ci': { ...base, level: 'beginner', project: { kind: 'project', label: 'my-app' }, files: [] },
+  '11-no-folder': { ...base, level: 'beginner', project: { kind: 'none', label: '' }, files: [], scanned: false },
+  '04-control-center-overview': { ...base, level: 'advanced' },
   '04-pipeline-diagram': { ...base, level: 'advanced' },
   '05-intent-verdicts': { ...base, level: 'advanced', intent: { status: 'ready', contract } },
   '07-injection-contexts': {
@@ -146,10 +168,27 @@ const scenes = {
   },
   '06-beginner-security': { ...base, level: 'beginner', filters: { severities: new Set(), categories: new Set(['security']) } },
 };
+// The client script does not run in a static render, so the tab a scene shows is selected here by flipping the same
+// attributes the script flips. Scenes not listed open on Summary.
+const sceneTabs = {
+  '04-control-center-overview': 'findings',
+  '04-pipeline-diagram': 'pipeline',
+  '05-intent-verdicts': 'evidence',
+  '07-injection-contexts': 'findings',
+  '08-multi-provider': 'findings',
+};
+function selectTab(html, tab) {
+  if (!tab) return html;
+  return html
+    .replace(/(data-tab="summary" [^>]*?)aria-selected="true"/, '$1aria-selected="false"')
+    .replace(new RegExp(`(data-tab="${tab}" [^>]*?)aria-selected="false"`), '$1aria-selected="true"')
+    .replace(/(id="panel-summary"[^>]*?)>/, '$1 hidden>')
+    .replace(new RegExp(`(id="panel-${tab}"[^>]*?) hidden>`), '$1>');
+}
 for (const [name, input] of Object.entries(scenes)) {
-  const html = renderControlCenter(buildViewModel(input), {
+  const html = selectTab(renderControlCenter(buildViewModel(input), {
     nonce, cspSource: "'self'", language: 'en', logoUri, t: (key, params) => tr(key, 'en', params),
-  }).replace('</head>', `<style nonce="${nonce}">${theme}</style></head>`);
+  }), sceneTabs[name]).replace('</head>', `<style nonce="${nonce}">${theme}</style></head>`);
   writeFileSync(join(outDir, `${name}.html`), html, 'utf8');
   console.log(name, input.files.reduce((n, f) => n + f.result.findings.length, 0) + ' findings');
 }
