@@ -79,7 +79,7 @@ Diagnostics identify supported static patterns. A clean scan **does not mean** a
 
 ## Screenshots
 
-A look at Orquestivo. Images 1–3 are real VS Code captures from the earlier 0.1.0 release; images 4–8 show the current Control Center, rendered from the product's own HTML (`src/ui`) with a real analysis of sample workflows and a VS Code dark theme palette. They are not full VS Code window captures; regenerate them with `scripts/render-readme-media.mjs`. Click any image to open it at full resolution.
+A look at Orquestivo. Images 1–3 are real VS Code captures from the earlier 0.1.0 release; images 4–11 show the current Control Center, rendered from the product's own HTML (`src/ui`) with a real analysis of sample workflows and a VS Code dark theme palette. They are not full VS Code window captures; regenerate them with `scripts/render-readme-media.mjs`. Click any image to open it at full resolution.
 
 ### 1. Control Center — scan overview
 
@@ -120,7 +120,7 @@ Counts by severity, filters by severity and category, and each finding with why 
 
 <p align="center">
   <a href="media/04-control-center-overview.png">
-    <img src="media/04-control-center-overview.png" alt="Orquestivo Control Center in dark theme with 1 pipeline file, 1 error, 8 warnings, 5 informational findings, severity and category filters and the first detailed findings." width="940" />
+    <img src="media/04-control-center-overview.png" alt="Orquestivo Control Center in dark theme, Findings tab selected, with 1 pipeline file, 1 error, 8 warnings, 5 informational findings, severity and category filters and the first detailed findings." width="940" />
   </a>
 </p>
 <p align="center"><sub>Control Center · Resumen, filtros y hallazgos explicados</sub></p>
@@ -171,9 +171,40 @@ GitHub Actions, GitLab CI/CD and Jenkins files analysed together: provider chips
 
 > Images 1–3 predate the multi-provider Control Center, the wizard diff preview and the evidence features. None of these images demonstrates execution, deployment or verification of a pipeline's intended outcome; the guided wizard and the Problems panel in a real VS Code window are covered by the integration suite rather than by a screenshot.
 
-### New in this release: project selector, audit status and guided fixes
+### 9. Audit status — what to fix first
 
-The screens for the project selector, the audit status with **What to fix first**, and the diff-first fix flow are **not yet in this gallery**: no graphical VS Code session was available when this was written, and the project policy forbids presenting mock-ups as real captures. After running `npm test`, generate the exact Control Center pages with `node scripts/render-readme-media.mjs media-render` (scenes `09-project-audit-plan`, `10-no-ci`, `11-no-folder`), capture them, and add the PNGs here marked as renders of the product's own HTML, as images 4–8 are.
+For an existing project, the Summary tab ranks the findings by priority and says where each one is, why it matters and what to change. Items that have a verified automatic fix offer **Review and apply fix**; a diff is shown first and nothing changes until you confirm. The *Beginner* experience level is shown.
+
+<p align="center">
+  <a href="media/09-project-audit-plan.png">
+    <img src="media/09-project-audit-plan.png" alt="Orquestivo Control Center Summary tab for the project my-app showing the Needs attention status and a prioritized What to fix first list: an unpinned action as manual review, and two low-priority items, missing permissions and a missing job timeout, each with a Review and apply fix button." width="940" />
+  </a>
+</p>
+<p align="center"><sub>Resumen · Qué corregir primero, con arreglos que se revisan antes de aplicar</sub></p>
+
+### 10. Project without CI
+
+When the selected project has no supported pipeline file, the Control Center says so and offers to create one with the guided generator.
+
+<p align="center">
+  <a href="media/10-no-ci.png">
+    <img src="media/10-no-ci.png" alt="Orquestivo Control Center Summary tab for the project my-app reporting No CI/CD found, with a Create new CI button." width="940" />
+  </a>
+</p>
+<p align="center"><sub>Proyecto sin CI · Invitación a crear uno nuevo</sub></p>
+
+### 11. No folder open
+
+When no folder is open, the Control Center says so, offers **Open project** and reports the review as not evaluated instead of showing an empty result.
+
+<p align="center">
+  <a href="media/11-no-folder.png">
+    <img src="media/11-no-folder.png" alt="Orquestivo Control Center with no folder open, showing an Open project button and the review status Not evaluated." width="940" />
+  </a>
+</p>
+<p align="center"><sub>Sin carpeta · Selección de proyecto</sub></p>
+
+> The diff-first fix preview opens in VS Code's own diff editor, not in the Control Center, so it is not part of this gallery; it is covered by the integration suite.
 
 ## Quick start
 
