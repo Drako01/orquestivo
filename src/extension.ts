@@ -29,7 +29,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const previews = new PreviewContent();
   const wizard = new GeneratorWizard(context.workspaceState, previews, log, async () => { await scan.run(false); center.show(); },
     () => { const uri = selection.repoFolderUri; return uri ? vscode.workspace.getWorkspaceFolder(uri) : undefined; });
-  const remediation = new RemediationService(store, previews, () => selection.current, log, async () => { await scan.run(false); });
+  const remediation = new RemediationService(context.workspaceState, store, previews, () => selection.current, log, async () => { await scan.run(false); });
   const ai = new AiExplainer(store);
   const tree = new FindingsTree(store);
 

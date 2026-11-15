@@ -20,8 +20,13 @@ Format follows Keep a Changelog; versions follow SemVer.
 
 - Guided fixes for existing GitHub Actions workflows: `PERMISSIONS_UNDECLARED` and `TIMEOUT_UNSET` get a verified minimal edit (`core/remediation`), diff preview, modal confirmation, SHA-256 guard against concurrent edits, rollback on write failure, re-analysis and `orquestivo.undoImprovement`. Commands `orquestivo.improveFinding` (internal) and `orquestivo.undoImprovement`.
 
+- Verified fixes for GitLab (`GITLAB_NO_TIMEOUT`, `GITLAB_ARTIFACT_NO_EXPIRY`), Azure (`AZURE_NO_TIMEOUT`) and Jenkins (`JENKINS_NO_TIMEOUT`, `JENKINS_NO_BUILD_DISCARDER`); the planner now lives in `src/providers/remediation.ts` and re-analyzes with the owning provider.
+- Control Center tabs (Summary, Findings, Improvements, Pipeline, Evidence, Advanced) with keyboard navigation; after the first render the host posts only the `<main>` markup so tab, focus, scroll and open sections are preserved.
+- Undo of the last improvement persists in workspace state (validated on load).
+- Specific states: untrusted workspace (Manage workspace trust), cancelled analysis, unreadable/oversized/failed files.
+
 ### Not yet implemented
-- Fixes for other rules/providers, a persisted undo across sessions, tabbed navigation, focus-preserving partial re-render and new README screenshots. See `docs/UPGRADE_ORQUESTIVO_UX_CICD_CHECKLIST.md`.
+- Real-VS-Code integration test of the apply/undo flow and new README screenshots (no browser could be launched under the command policy). See `docs/UPGRADE_ORQUESTIVO_UX_CICD_CHECKLIST.md`.
 
 _Nothing yet._
 

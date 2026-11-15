@@ -48,6 +48,8 @@ export interface ProjectView {
 
 export interface ViewInput {
   readonly project?: ProjectView | undefined;
+  /** The latest analysis was cancelled. */
+  readonly cancelled?: boolean | undefined;
   readonly files: readonly ScanFile[];
   readonly scanned: boolean;
   readonly trusted: boolean;

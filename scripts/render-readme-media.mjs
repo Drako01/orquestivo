@@ -10,7 +10,7 @@ const { githubActionsProvider } = require('../dist-test/core/github/provider.js'
 const { buildViewModel, NO_FILTERS } = require('../dist-test/ui/view-model.js');
 const { renderControlCenter } = require('../dist-test/ui/render.js');
 const { tr } = require('../dist-test/i18n.js');
-const { fixableIndexes } = require('../dist-test/core/remediation.js');
+const { fixableIndexes } = require('../dist-test/providers/remediation.js');
 const { providerRegistry } = require('../dist-test/providers/registry.js');
 
 const outDir = resolve(process.argv[2] ?? 'media-render');

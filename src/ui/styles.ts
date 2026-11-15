@@ -78,5 +78,12 @@ th{color:var(--vscode-descriptionForeground);font-weight:600}
 .empty{padding:12px 0;color:var(--vscode-descriptionForeground)}
 footer{margin:24px 0;color:var(--vscode-descriptionForeground);font-size:.88em}
 @media (max-width:620px){body{padding:14px}.finding dl{grid-template-columns:1fr}th,td{padding:4px}}
-@media (forced-colors:active){.node rect{stroke:CanvasText}.card,.panel{border-color:CanvasText}}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--vscode-panel-border);margin:16px 0 12px}
+.tabs button[role=tab]{background:transparent;color:var(--vscode-foreground);border:1px solid transparent;border-bottom:3px solid transparent;border-radius:6px 6px 0 0;padding:6px 12px;cursor:pointer;overflow-wrap:anywhere}
+.tabs button[role=tab][aria-selected=true]{border-bottom-color:var(--vscode-focusBorder);font-weight:600}
+.tabs button[role=tab]:hover{background:var(--vscode-toolbar-hoverBackground,var(--vscode-button-secondaryBackground))}
+.tabs button[role=tab]:focus-visible,[role=tabpanel]:focus-visible{outline:2px solid var(--vscode-focusBorder);outline-offset:2px}
+[role=tabpanel][hidden]{display:none}
+.notice{overflow-wrap:anywhere}
+@media (forced-colors:active){.node rect{stroke:CanvasText}.card,.panel{border-color:CanvasText}.tabs button[role=tab][aria-selected=true]{border-bottom-color:Highlight}}
 `;

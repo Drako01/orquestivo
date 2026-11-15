@@ -1,13 +1,15 @@
 import * as vscode from 'vscode';
 import { scopeContains, type ProjectScope } from '../core/project.js';
-import { githubActionsProvider } from '../core/github/provider.js';
-import { hashText, planFix, type FixPlan } from '../core/remediation.js';
+import { getProvider } from '../providers/registry.js';
+import { MAX_RECORD_CHARS, hashText, parseImprovementRecord, planFix, type FixPlan } from '../providers/remediation.js';
 import { isInsideFolder, type PreviewContent } from './generator.js';
 import type { Logger } from './runtime.js';
-import { relativePath, t } from './runtime.js';
+import { relativePath, resolveWorkspaceUri, t } from './runtime.js';
 import type { ScanStore } from './store.js';
 
-interface Applied { readonly uri: vscode.Uri; readonly before: string; readonly after: string }
+interface Applied { readonly uri: vscode.Uri; readonly before: string; readonly after: string; readonly provider: string | undefined }
+
+const RECORD_KEY = 'orquestivo.lastImprovement';
 
 const MAX_INDEX = 100_000;
 const isIndex = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 && value <= MAX_INDEX;
@@ -17,12 +19,35 @@ export class RemediationService {
   private last: Applied | undefined;
 
   constructor(
+    private readonly state: vscode.Memento,
     private readonly store: ScanStore,
     private readonly previews: PreviewContent,
     private readonly scope: () => ProjectScope | undefined,
     private readonly log: Logger,
     private readonly rescan: () => Promise<void>,
   ) {}
+
+  /** In-memory record, or the persisted one (validated, inside an open workspace folder) after a reload. */
+  private recorded(): Applied | undefined {
+    if (this.last) return this.last;
+    const saved = parseImprovementRecord(this.state.get<unknown>(RECORD_KEY));
+    const uri = saved ? resolveWorkspaceUri(saved.uri) : undefined;
+    const folder = uri ? vscode.workspace.getWorkspaceFolder(uri) : undefined;
+    if (!saved || !uri || !folder || !isInsideFolder(folder.uri, vscode.workspace.asRelativePath(uri, false))) return undefined;
+    return { uri, before: saved.before, after: saved.after, provider: undefined };
+  }
+
+  private remember(applied: Applied): void {
+    this.last = applied;
+    const record = { uri: applied.uri.toString(), before: applied.before, after: applied.after };
+    const fits = record.before.length + record.after.length <= MAX_RECORD_CHARS;
+    void this.state.update(RECORD_KEY, fits ? record : undefined);
+  }
+
+  private forget(): void {
+    this.last = undefined;
+    void this.state.update(RECORD_KEY, undefined);
+  }
 
   private async currentText(uri: vscode.Uri): Promise<string> {
     const open = vscode.workspace.textDocuments.find((d) => d.uri.toString() === uri.toString());
@@ -64,10 +89,10 @@ export class RemediationService {
     const answer = await vscode.window.showInformationMessage(
       t('fixConfirm', { file: name, summary: t(plan.summaryKey, plan.summaryParams) }), { modal: true }, accept);
     if (answer !== accept) return; // declined: nothing was written
-    await this.apply(entry.uri, plan, name);
+    await this.apply(entry.uri, plan, name, entry.file.result.provider);
   }
 
-  private async apply(uri: vscode.Uri, plan: FixPlan, name: string): Promise<void> {
+  private async apply(uri: vscode.Uri, plan: FixPlan, name: string, provider: string | undefined): Promise<void> {
     // Re-check right before writing: the file may have changed while the user reviewed the diff.
     const now = await this.currentText(uri);
     if (hashText(now) !== plan.sourceHash) { await vscode.window.showWarningMessage(t('fixStale')); return; }
@@ -78,15 +103,16 @@ export class RemediationService {
       await vscode.window.showErrorMessage(t('fixFailed'));
       return;
     }
-    this.last = { uri, before: plan.before, after: plan.after };
+    this.remember({ uri, before: plan.before, after: plan.after, provider });
     await this.rescan();
-    const count = (text: string): number => githubActionsProvider.analyze(text).findings.length;
+    const analyzer = provider ? getProvider(provider) : undefined;
+    const count = (text: string): number => analyzer?.analyze(text).findings.length ?? 0;
     await vscode.window.showInformationMessage(t('fixApplied', { file: name, before: count(plan.before), after: count(plan.after) }));
   }
 
   /** Reverts the last improvement only if the user has not edited the file since. */
   async undo(): Promise<void> {
-    const last = this.last;
+    const last = this.recorded();
     if (!last) { await vscode.window.showInformationMessage(t('fixUndoNothing')); return; }
     const name = relativePath(last.uri);
     if (await this.currentText(last.uri) !== last.after) {
@@ -98,7 +124,7 @@ export class RemediationService {
       return;
     }
     if (!await this.replaceAll(last.uri, last.before)) { await vscode.window.showErrorMessage(t('fixFailed')); return; }
-    this.last = undefined;
+    this.forget();
     await this.rescan();
     await vscode.window.showInformationMessage(t('fixUndone', { file: name }));
   }

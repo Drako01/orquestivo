@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { makeFinding } from '../core/findings.js';
-import { fixableIndexes } from '../core/remediation.js';
+import { fixableIndexes } from '../providers/remediation.js';
 import type { Finding, WorkflowFileResult } from '../core/types.js';
 import { detectProvider, providerFilePatterns } from '../providers/registry.js';
 import { LimitExceededError, assertMaxBytes } from '../security/limits.js';

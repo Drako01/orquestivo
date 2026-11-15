@@ -78,7 +78,8 @@ export class ScanService implements vscode.Disposable {
         token.onCancellationRequested(() => { source.cancel(); });
         return scanWorkspace(rootUris(scope), settings, source.token, this.log);
       });
-    if (!outcome || generation !== this.generation) return; // cancelled or superseded: never publish stale results
+    if (generation !== this.generation) return; // superseded: never publish stale results
+    if (!outcome) { this.store.markCancelled(); return; } // cancelled: keep earlier results but say so
     const contract = await loadIntent(this.log, this.selection.primaryUri);
     if (generation !== this.generation) return;
     this.contract = contract;

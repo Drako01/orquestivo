@@ -83,16 +83,19 @@ export interface AuditSummary {
   /** Some files could not be fully analysed (limit, read error, parser failure) or the scan was cut. */
   readonly incomplete: boolean;
   readonly needsAttention: number;
+  /** Findings that mean a file could not be read, was over the size limit, unsupported or failed to analyse. */
+  readonly unreadable: number;
 }
 
 /** Honest result: absence of findings is "no findings in scope", never "perfect". */
 export function summarizeAudit(input: AuditInput): AuditSummary {
-  if (!input.trusted || !input.scanned) return { status: 'not-evaluated', incomplete: false, needsAttention: 0 };
-  if (input.files.length === 0) return { status: 'no-ci', incomplete: false, needsAttention: 0 };
+  if (!input.trusted || !input.scanned) return { status: 'not-evaluated', incomplete: false, needsAttention: 0, unreadable: 0 };
+  if (input.files.length === 0) return { status: 'no-ci', incomplete: false, needsAttention: 0, unreadable: 0 };
   const findings = input.files.flatMap((f) => f.result.findings);
-  const incomplete = input.truncated || findings.some((f) => INCOMPLETE_CODES.has(f.code));
+  const unreadable = findings.filter((f) => INCOMPLETE_CODES.has(f.code)).length;
+  const incomplete = input.truncated || unreadable > 0;
   const needsAttention = findings.filter((f) => f.severity !== 'information').length
     + input.files.filter((f) => !f.result.syntaxValid && f.result.findings.length === 0).length;
-  if (needsAttention > 0) return { status: 'attention', incomplete, needsAttention };
-  return { status: incomplete ? 'partial' : 'no-findings', incomplete, needsAttention };
+  if (needsAttention > 0) return { status: 'attention', incomplete, needsAttention, unreadable };
+  return { status: incomplete ? 'partial' : 'no-findings', incomplete, needsAttention, unreadable };
 }

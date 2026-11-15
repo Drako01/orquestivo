@@ -38,14 +38,16 @@ Orquestivo reports **static inference** by default. It does not run your pipelin
 1. **Pick the project.** The Control Center shows the project being audited (a single folder is selected automatically). With several folders or a monorepo press **Change project**; the choice is remembered per workspace and "entire workspace" is a deliberate option.
 2. **Press _Analyze existing CI/CD_.** Analysis is local and read-only: no pipeline is run and no GitHub login, token or AI is needed. Prefer a new pipeline? Use **Create new CI**.
 3. **Read the review.** The status is honest (*Needs attention*, *Partial*, *No problems detected by the available rules*, *No CI/CD found* or *Not evaluated*) and **What to fix first** lists the most important items with why they matter and what to change.
-4. **Apply a safe fix, or fix it by hand.** For a small set of verified GitHub Actions fixes (missing top-level `permissions`, missing job `timeout-minutes`) press **Review and apply fix**: Orquestivo opens a diff, asks for explicit confirmation, refuses to write if the file changed meanwhile, re-analyzes, and **Undo last improvement** reverts it unless you edited the file afterwards. Every other item is manual guidance, with no apply button.
+4. **Apply a safe fix, or fix it by hand.** For a small set of verified fixes press **Review and apply fix**: Orquestivo opens a diff, asks for explicit confirmation, refuses to write if the file changed meanwhile, re-analyzes, and **Undo last improvement** reverts it unless you edited the file afterwards (the undo record survives reloading VS Code). Verified fixes: GitHub Actions `permissions` and job `timeout-minutes`; GitLab CI default `timeout` and artifact `expire_in`; Azure Pipelines `timeoutInMinutes`; Jenkins `timeout` and `buildDiscarder` options. Every other item is manual guidance, with no apply button.
+
+The Control Center is organised in tabs: **Summary**, **Findings**, **Improvements**, **Pipeline**, **Evidence** and **Advanced**. Refreshes keep your tab, focused control, scroll position and expanded sections.
 
 ## What it does
 
 | Area | Capability |
 | --- | --- |
 | Project-aware audit | Project selector (multi-root, monorepo sub-projects), results, intent contract and generator default scoped to the selected project; stale scans are discarded when you switch |
-| Guided improvements | Prioritised plan from real findings; verified diff-first fixes for two GitHub Actions rules with hash guard and undo. No fix is invented for other rules or providers |
+| Guided improvements | Prioritised plan from real findings; verified diff-first fixes for seven rules across GitHub Actions, GitLab CI, Azure Pipelines and Jenkins, each re-analyzed before it is offered, with hash guard and persistent undo. No fix is invented for any other rule |
 | Script-injection checks | Flags attacker-controlled values (`github.head_ref`, `inputs.*`, issue and pull request text, `workflow_run` data) interpolated into `run` scripts and `actions/github-script` programs, even inside `format()` or bracket access. Textual, no data-flow: see [docs/ANALYSIS.md](docs/ANALYSIS.md#untrusted-contexts-expression_in_script) |
 | Multi-provider analysis | **GitHub Actions** (69 rule codes), **GitLab CI/CD**, **Azure Pipelines** and **Jenkins** (declarative Jenkinsfile). Rule details: [docs/ANALYSIS.md](docs/ANALYSIS.md), [docs/PROVIDERS.md](docs/PROVIDERS.md) |
 | Control Center | Webview with an accessible pipeline diagram (with a textual alternative) and three explanation levels: **beginner**, **advanced**, **expert** |
