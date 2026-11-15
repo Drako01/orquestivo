@@ -10,9 +10,10 @@ export type WebviewMessage =
   | { readonly type: 'clearFilters' }
   | { readonly type: 'setLevel'; readonly level: ExperienceLevel }
   | { readonly type: 'explainFinding'; readonly file: number; readonly index: number }
+  | { readonly type: 'previewFix'; readonly file: number; readonly index: number }
   | { readonly type: 'command'; readonly command: WebviewCommand };
 
-export const WEBVIEW_COMMANDS = ['analyze', 'generate', 'selectProject', 'openFolder', 'connectGitHub', 'disconnectGitHub', 'fetchRuns'] as const;
+export const WEBVIEW_COMMANDS = ['analyze', 'generate', 'selectProject', 'openFolder', 'undoImprovement', 'connectGitHub', 'disconnectGitHub', 'fetchRuns'] as const;
 export type WebviewCommand = typeof WEBVIEW_COMMANDS[number];
 
 const MAX_INDEX = 100_000;
@@ -49,6 +50,9 @@ export function parseWebviewMessage(raw: unknown): WebviewMessage | undefined {
     case 'explainFinding':
       return hasExactKeys(raw, ['type', 'file', 'index']) && isInt(raw['file'], 0, MAX_INDEX) && isInt(raw['index'], 0, MAX_INDEX)
         ? { type: 'explainFinding', file: raw['file'], index: raw['index'] } : undefined;
+    case 'previewFix':
+      return hasExactKeys(raw, ['type', 'file', 'index']) && isInt(raw['file'], 0, MAX_INDEX) && isInt(raw['index'], 0, MAX_INDEX)
+        ? { type: 'previewFix', file: raw['file'], index: raw['index'] } : undefined;
     case 'command':
       return hasExactKeys(raw, ['type', 'command']) && oneOf(WEBVIEW_COMMANDS, raw['command'])
         ? { type: 'command', command: raw['command'] } : undefined;

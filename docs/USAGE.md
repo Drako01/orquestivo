@@ -26,6 +26,12 @@ Open it from the Activity Bar icon or **Orquestivo: Open Control Center** (`orqu
 
 Explanation level (planned: beginner, advanced, expert) changes how much detail each finding shows: beginner favors plain language and the "why it matters"; advanced adds the recommendation and documentation link; expert adds rule code, evidence basis and location. The level is a presentation choice and never changes what is detected.
 
+### Project, status and improvements
+
+- **Project:** the header shows the audited project. **Change project** (or `Orquestivo: Select project to analyze`) lists workspace folders, monorepo sub-projects found by bounded CI-file discovery, and an explicit "entire workspace" option. The choice is stored per workspace. Switching discards previous results, diagnostics, the intent contract and fetched runs.
+- **Status:** *Needs attention*, *Partial*, *No problems detected by the available rules* (never "perfect": only static rules ran), *No CI/CD found* (offers **Create new CI**) or *Not evaluated*.
+- **Improvements:** items are ordered by priority and security first. Only `PERMISSIONS_UNDECLARED` and `TIMEOUT_UNSET` in GitHub Actions can offer **Review and apply fix**; the fix is built and re-analyzed in memory (it must remove the finding and add none), shown as a diff, and written only after a modal confirmation if the file is byte-identical to what was analyzed. **Undo last improvement** reverts it unless the file was edited since (the undo record lives for the current session). GitLab, Azure and Jenkins are audited but have manual guidance only.
+
 ## 3. Intent contracts
 
 An intent contract states what the pipeline must achieve. Create `.orquestivo/intent.json`:

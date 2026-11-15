@@ -13,6 +13,8 @@ exports.run = async function run() {
     'orquestivo.analyze',
     'orquestivo.generateCI',
     'orquestivo.selectProject',
+    'orquestivo.improveFinding',
+    'orquestivo.undoImprovement',
     'orquestivo.openFinding',
     'orquestivo.undoLastGeneration',
     'orquestivo.connectGitHub',

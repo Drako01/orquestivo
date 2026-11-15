@@ -2,18 +2,22 @@
 import type { Category, Finding, Severity } from './types.js';
 
 export type Priority = 'P0' | 'P1' | 'P2';
-/** Only `manual-only` is produced today: no automatic patch exists yet, so no "apply" is ever offered. */
+/** `preview-required` only for findings with a verified fix; everything else stays `manual-only` (no apply button). */
 export type AutomationLevel = 'safe-auto' | 'preview-required' | 'manual-only';
 
 export interface PlannerFile {
   readonly id: number;
   readonly result: { readonly path: string; readonly findings: readonly Finding[] };
+  /** Indexes of findings that have a verified, previewable fix (see `core/remediation`). */
+  readonly fixable?: readonly number[] | undefined;
 }
 
 export interface Proposal {
   /** Stable per file path + rule + line. */
   readonly id: string;
   readonly fileId: number;
+  /** Index of the finding inside its file result. */
+  readonly index: number;
   readonly path: string;
   readonly line: number;
   readonly code: string;
@@ -45,13 +49,13 @@ export function planRecommendations(files: readonly PlannerFile[]): readonly Pro
   const seen = new Set<string>();
   const proposals: Proposal[] = [];
   for (const file of files) {
-    for (const f of file.result.findings) {
+    for (const [index, f] of file.result.findings.entries()) {
       const id = `${file.result.path}#${f.code}@${f.line}`;
       if (seen.has(id)) continue;
       seen.add(id);
       proposals.push({
-        id, fileId: file.id, path: file.result.path, line: f.line, code: f.code, severity: f.severity,
-        category: f.category, priority: priorityOf(f), automation: 'manual-only', message: f.message,
+        id, fileId: file.id, index, path: file.result.path, line: f.line, code: f.code, severity: f.severity,
+        category: f.category, priority: priorityOf(f), automation: file.fixable?.includes(index) ? 'preview-required' : 'manual-only', message: f.message,
         rationale: f.impact, recommendation: f.recommendation, ...(f.fix ? { suggestion: f.fix } : {}), evidence: f.evidence,
       });
     }

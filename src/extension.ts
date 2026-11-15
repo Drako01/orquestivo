@@ -6,6 +6,7 @@ import { DiagnosticsPublisher, FixActionProvider } from './vscode/diagnostics.js
 import { GeneratorWizard, PreviewContent } from './vscode/generator.js';
 import { registerIntegrationPrompts } from './vscode/e2e-prompts.js';
 import { ProjectSelection } from './vscode/project.js';
+import { RemediationService } from './vscode/remediation.js';
 import { RemoteEvidence } from './vscode/remote.js';
 import { Logger, relativePath, resolveWorkspaceUri, revealLine, t } from './vscode/runtime.js';
 import { ScanService } from './vscode/scan-service.js';
@@ -28,6 +29,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const previews = new PreviewContent();
   const wizard = new GeneratorWizard(context.workspaceState, previews, log, async () => { await scan.run(false); center.show(); },
     () => { const uri = selection.repoFolderUri; return uri ? vscode.workspace.getWorkspaceFolder(uri) : undefined; });
+  const remediation = new RemediationService(store, previews, () => selection.current, log, async () => { await scan.run(false); });
   const ai = new AiExplainer(store);
   const tree = new FindingsTree(store);
 
@@ -64,6 +66,8 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand(COMMANDS.analyze, async () => { await scan.run(true); center.show(); }),
     vscode.commands.registerCommand(COMMANDS.generate, () => wizard.generate()),
     vscode.commands.registerCommand(COMMANDS.selectProject, () => selection.pick()),
+    vscode.commands.registerCommand(COMMANDS.improveFinding, (arg?: unknown) => remediation.improve(arg)),
+    vscode.commands.registerCommand(COMMANDS.undoImprovement, () => remediation.undo()),
     vscode.commands.registerCommand(COMMANDS.undoGeneration, () => wizard.undo()),
     vscode.commands.registerCommand(COMMANDS.connectGitHub, () => remote.connect()),
     vscode.commands.registerCommand(COMMANDS.disconnectGitHub, () => remote.disconnect()),

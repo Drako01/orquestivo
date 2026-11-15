@@ -26,6 +26,7 @@ export const CLIENT_SCRIPT = `
       case 'command': post({ type: 'command', command: el.getAttribute('data-command') }); break;
       case 'filter': post({ type: 'toggleFilter', dimension: el.getAttribute('data-dimension'), value: el.getAttribute('data-value') }); break;
       case 'clear-filters': post({ type: 'clearFilters' }); break;
+      case 'fix': post({ type: 'previewFix', file: int(el.getAttribute('data-file')), index: int(el.getAttribute('data-index')) }); break;
       case 'explain': post({ type: 'explainFinding', file: int(el.getAttribute('data-file')), index: int(el.getAttribute('data-index')) }); break;
     }
   });

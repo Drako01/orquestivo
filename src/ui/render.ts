@@ -220,7 +220,10 @@ function renderProposal(p: Proposal, n: number, level: ExperienceLevel, t: Trans
     + `${button(`plan-open-${n}`, t('actionOpenLine'), `data-action="open" data-file="${p.fileId}" data-line="${p.line}"`)}</dd>`
     + `<dt>${esc(t('planWhy'))}</dt><dd>${esc(redactSecrets(p.rationale))}</dd>`
     + `<dt>${esc(t('planWhat'))}</dt><dd>${esc(redactSecrets(p.recommendation))}</dd>${suggestion}</dl>`
-    + `<p class="muted">${esc(t('planManual'))}</p></li>`;
+    + (p.automation === 'preview-required'
+      ? `<p>${button(`plan-fix-${n}`, t('fixAction'), `data-action="fix" data-file="${p.fileId}" data-index="${p.index}"`, true)} <span class="muted">${esc(t('fixPreviewNote'))}</span></p>`
+      : `<p class="muted">${esc(t('planManual'))}</p>`)
+    + `</li>`;
 }
 
 function renderAudit(vm: ViewModel, t: Translate): string {
@@ -230,7 +233,9 @@ function renderAudit(vm: ViewModel, t: Translate): string {
   const scope = vm.input.scanned && vm.files.length > 0
     ? `<p class="muted">${esc(t('files'))}: ${vm.totals.files} · ${esc(t('providersLabel'))}: ${esc(vm.providers.join(', '))}</p>` : '';
   const incomplete = audit.incomplete && audit.status !== 'partial' ? `<p class="banner warn" role="note">${esc(t('auditIncomplete'))}</p>` : '';
-  const create = audit.status === 'no-ci' ? `<div class="toolbar">${button('cmd-create-ci', t('createNewCi'), 'data-action="command" data-command="generate"', true)}</div>` : '';
+  const undo = vm.input.scanned && audit.status !== 'no-ci'
+    ?`<div class="toolbar">${button('cmd-undo-improvement', t('fixUndoAction'), 'data-action="command" data-command="undoImprovement"')}</div>` : '';
+  const create = undo + audit.status === 'no-ci' ? `<div class="toolbar">${button('cmd-create-ci', t('createNewCi'), 'data-action="command" data-command="generate"', true)}</div>` : '';
   const top = proposals.slice(0, TOP_PRIORITIES);
   const rest = proposals.slice(TOP_PRIORITIES);
   const plan = proposals.length === 0 ? '' : `<h3>${esc(t('planTitle'))}</h3><ol class="list">${top.map((p, i) => renderProposal(p, i, vm.input.level, t)).join('')}</ol>`

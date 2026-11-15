@@ -10,6 +10,8 @@ export const COMMANDS = {
   analyze: 'orquestivo.analyze',
   generate: 'orquestivo.generateCI',
   selectProject: 'orquestivo.selectProject',
+  improveFinding: 'orquestivo.improveFinding',
+  undoImprovement: 'orquestivo.undoImprovement',
   openFinding: 'orquestivo.openFinding',
   connectGitHub: 'orquestivo.connectGitHub',
   disconnectGitHub: 'orquestivo.disconnectGitHub',

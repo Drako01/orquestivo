@@ -18,8 +18,10 @@ Format follows Keep a Changelog; versions follow SemVer.
 ### Changed
 - `docs/USAGE.md` no longer claims an unreleased preview or that files are never overwritten.
 
+- Guided fixes for existing GitHub Actions workflows: `PERMISSIONS_UNDECLARED` and `TIMEOUT_UNSET` get a verified minimal edit (`core/remediation`), diff preview, modal confirmation, SHA-256 guard against concurrent edits, rollback on write failure, re-analysis and `orquestivo.undoImprovement`. Commands `orquestivo.improveFinding` (internal) and `orquestivo.undoImprovement`.
+
 ### Not yet implemented
-- Applying an existing-workflow fix with diff, confirmation and undo (phase 4) is **not** included; the plan is guidance only. See `docs/UPGRADE_ORQUESTIVO_UX_CICD_CHECKLIST.md`.
+- Fixes for other rules/providers, a persisted undo across sessions, tabbed navigation, focus-preserving partial re-render and new README screenshots. See `docs/UPGRADE_ORQUESTIVO_UX_CICD_CHECKLIST.md`.
 
 _Nothing yet._
 

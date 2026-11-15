@@ -76,7 +76,7 @@ async function writeWorkspaceFile(uri: vscode.Uri, content: string): Promise<boo
  * True when `relativePath` stays inside `folder` after following symlinks and junctions. Virtual file systems
  * (non-`file` schemes) have no links to follow, so the workspace API itself is the boundary there.
  */
-function isInsideFolder(folder: vscode.Uri, relativePath: string): boolean {
+export function isInsideFolder(folder: vscode.Uri, relativePath: string): boolean {
   return folder.scheme !== 'file' || resolveInside(folder.fsPath, relativePath, realpathSync).ok;
 }
 

@@ -17,6 +17,8 @@ export interface ScanFile {
   readonly result: WorkflowFileResult;
   readonly providerName: string;
   readonly model?: PipelineModel | undefined;
+  /** Indexes of findings with a verified previewable fix. */
+  readonly fixable?: readonly number[] | undefined;
 }
 
 export type IntentInput =

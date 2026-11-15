@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { makeFinding } from '../core/findings.js';
+import { fixableIndexes } from '../core/remediation.js';
 import type { Finding, WorkflowFileResult } from '../core/types.js';
 import { detectProvider, providerFilePatterns } from '../providers/registry.js';
 import { LimitExceededError, assertMaxBytes } from '../security/limits.js';
@@ -72,7 +73,8 @@ async function analyzeUri(uri: vscode.Uri, id: number, settings: Settings, log: 
   }
   try {
     const result: WorkflowFileResult = { ...provider.analyze(source), ...base };
-    return { file: { id, providerName, result, model: provider.model(source) }, uri, source };
+    const fixable = fixableIndexes(source, provider.id, result.findings);
+    return { file: { id, providerName, result, model: provider.model(source), ...(fixable.length ? { fixable } : {}) }, uri, source };
   } catch (error) {
     log.error(`Analysis failed for ${path}`, error);
     return failed(problemFinding('ANALYSIS_FAILED', t('analysisFailed')), source);

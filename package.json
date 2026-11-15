@@ -80,6 +80,16 @@
         "icon": "$(root-folder)"
       },
       {
+        "command": "orquestivo.improveFinding",
+        "title": "%command.improve%",
+        "category": "Orquestivo"
+      },
+      {
+        "command": "orquestivo.undoImprovement",
+        "title": "%command.undoImprovement%",
+        "category": "Orquestivo"
+      },
+      {
         "command": "orquestivo.undoLastGeneration",
         "title": "%command.undo%",
         "category": "Orquestivo"
@@ -148,6 +158,10 @@
       "commandPalette": [
         {
           "command": "orquestivo.openFinding",
+          "when": "false"
+        },
+        {
+          "command": "orquestivo.improveFinding",
           "when": "false"
         }
       ]

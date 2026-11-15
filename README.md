@@ -33,10 +33,19 @@ A pipeline can be valid YAML and still be **unsafe, fragile or incorrect for its
 
 Orquestivo reports **static inference** by default. It does not run your pipeline. Only opt-in, read-only evidence from real GitHub Actions runs can back a statement about what actually happened, and even then it does not prove business requirements are met.
 
+## How to use it in four steps
+
+1. **Pick the project.** The Control Center shows the project being audited (a single folder is selected automatically). With several folders or a monorepo press **Change project**; the choice is remembered per workspace and "entire workspace" is a deliberate option.
+2. **Press _Analyze existing CI/CD_.** Analysis is local and read-only: no pipeline is run and no GitHub login, token or AI is needed. Prefer a new pipeline? Use **Create new CI**.
+3. **Read the review.** The status is honest (*Needs attention*, *Partial*, *No problems detected by the available rules*, *No CI/CD found* or *Not evaluated*) and **What to fix first** lists the most important items with why they matter and what to change.
+4. **Apply a safe fix, or fix it by hand.** For a small set of verified GitHub Actions fixes (missing top-level `permissions`, missing job `timeout-minutes`) press **Review and apply fix**: Orquestivo opens a diff, asks for explicit confirmation, refuses to write if the file changed meanwhile, re-analyzes, and **Undo last improvement** reverts it unless you edited the file afterwards. Every other item is manual guidance, with no apply button.
+
 ## What it does
 
 | Area | Capability |
 | --- | --- |
+| Project-aware audit | Project selector (multi-root, monorepo sub-projects), results, intent contract and generator default scoped to the selected project; stale scans are discarded when you switch |
+| Guided improvements | Prioritised plan from real findings; verified diff-first fixes for two GitHub Actions rules with hash guard and undo. No fix is invented for other rules or providers |
 | Script-injection checks | Flags attacker-controlled values (`github.head_ref`, `inputs.*`, issue and pull request text, `workflow_run` data) interpolated into `run` scripts and `actions/github-script` programs, even inside `format()` or bracket access. Textual, no data-flow: see [docs/ANALYSIS.md](docs/ANALYSIS.md#untrusted-contexts-expression_in_script) |
 | Multi-provider analysis | **GitHub Actions** (69 rule codes), **GitLab CI/CD**, **Azure Pipelines** and **Jenkins** (declarative Jenkinsfile). Rule details: [docs/ANALYSIS.md](docs/ANALYSIS.md), [docs/PROVIDERS.md](docs/PROVIDERS.md) |
 | Control Center | Webview with an accessible pipeline diagram (with a textual alternative) and three explanation levels: **beginner**, **advanced**, **expert** |
@@ -52,6 +61,8 @@ Commands (Command Palette, category "Orquestivo"):
 | Command ID | Purpose |
 | --- | --- |
 | `orquestivo.analyze` | Analyze CI pipeline files in the workspace |
+| `orquestivo.selectProject` | Choose which project (folder, monorepo sub-project or whole workspace) is audited |
+| `orquestivo.undoImprovement` | Undo the last applied improvement (refuses if the file was edited afterwards) |
 | `orquestivo.generateCI` | Open the generator wizard |
 | `orquestivo.openHome` | Open the Control Center |
 | `orquestivo.connectGitHub` | Store a GitHub token in SecretStorage (opt-in) |
@@ -60,7 +71,7 @@ Commands (Command Palette, category "Orquestivo"):
 | `orquestivo.undoLastGeneration` | Undo the files created by the last generation |
 | `orquestivo.ai.explainFinding` | Ask the configured AI provider to explain a finding (only if enabled) |
 
-> Command registration and UI wording were being implemented while this document was written. Cross-check the live list in `package.json` (`contributes.commands`). `orquestivo.openFinding` is an internal navigation command.
+> Command registration and UI wording were being implemented while this document was written. Cross-check the live list in `package.json` (`contributes.commands`). `orquestivo.openFinding` and `orquestivo.improveFinding` are internal commands used by the Control Center.
 
 Diagnostics identify supported static patterns. A clean scan **does not mean** a pipeline has run, is secure in every context or will deploy successfully.
 
@@ -157,6 +168,10 @@ GitHub Actions, GitLab CI/CD and Jenkins files analysed together: provider chips
 <p align="center"><sub>Multi-proveedor · Un solo análisis para varios CI</sub></p>
 
 > Images 1–3 predate the multi-provider Control Center, the wizard diff preview and the evidence features. None of these images demonstrates execution, deployment or verification of a pipeline's intended outcome; the guided wizard and the Problems panel in a real VS Code window are covered by the integration suite rather than by a screenshot.
+
+### New in this release: project selector, audit status and guided fixes
+
+The screens for the project selector, the audit status with **What to fix first**, and the diff-first fix flow are **not yet in this gallery**: no graphical VS Code session was available when this was written, and the project policy forbids presenting mock-ups as real captures. After running `npm test`, generate the exact Control Center pages with `node scripts/render-readme-media.mjs media-render` (scenes `09-project-audit-plan`, `10-no-ci`, `11-no-folder`), capture them, and add the PNGs here marked as renders of the product's own HTML, as images 4–8 are.
 
 ## Quick start
 

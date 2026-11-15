@@ -18,6 +18,7 @@ const WEBVIEW_COMMAND_IDS: Readonly<Record<WebviewCommand, string>> = {
   generate: COMMANDS.generate,
   selectProject: COMMANDS.selectProject,
   openFolder: 'workbench.action.files.openFolder',
+  undoImprovement: COMMANDS.undoImprovement,
   connectGitHub: COMMANDS.connectGitHub,
   disconnectGitHub: COMMANDS.disconnectGitHub,
   fetchRuns: COMMANDS.fetchRuns,
@@ -102,6 +103,9 @@ export class ControlCenter implements vscode.Disposable {
         return; // The configuration listener re-renders.
       case 'explainFinding':
         await vscode.commands.executeCommand(COMMANDS.explainFinding, { file: message.file, index: message.index });
+        return;
+      case 'previewFix':
+        await vscode.commands.executeCommand(COMMANDS.improveFinding, { file: message.file, index: message.index });
         return;
       case 'command':
         await vscode.commands.executeCommand(WEBVIEW_COMMAND_IDS[message.command]);
