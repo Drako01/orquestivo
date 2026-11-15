@@ -12,6 +12,7 @@ exports.run = async function run() {
     'orquestivo.openHome',
     'orquestivo.analyze',
     'orquestivo.generateCI',
+    'orquestivo.selectProject',
     'orquestivo.openFinding',
     'orquestivo.undoLastGeneration',
     'orquestivo.connectGitHub',

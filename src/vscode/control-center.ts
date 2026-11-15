@@ -5,6 +5,8 @@ import { renderControlCenter } from '../ui/render.js';
 import { toggleInSet, buildViewModel, NO_FILTERS, type Filters, type IntentInput } from '../ui/view-model.js';
 import type { Logger} from './runtime.js';
 import { readSettings, revealLine, t } from './runtime.js';
+import { scopeLabel } from '../core/project.js';
+import type { ProjectSelection } from './project.js';
 import type { RemoteEvidence } from './remote.js';
 import type { ScanStore } from './store.js';
 import { COMMANDS } from './tree.js';
@@ -14,6 +16,8 @@ export const HOME_VIEW_TYPE = 'orquestivo.home';
 const WEBVIEW_COMMAND_IDS: Readonly<Record<WebviewCommand, string>> = {
   analyze: COMMANDS.analyze,
   generate: COMMANDS.generate,
+  selectProject: COMMANDS.selectProject,
+  openFolder: 'workbench.action.files.openFolder',
   connectGitHub: COMMANDS.connectGitHub,
   disconnectGitHub: COMMANDS.disconnectGitHub,
   fetchRuns: COMMANDS.fetchRuns,
@@ -22,6 +26,7 @@ const WEBVIEW_COMMAND_IDS: Readonly<Record<WebviewCommand, string>> = {
 export interface ControlCenterSources {
   readonly store: ScanStore;
   readonly remote: RemoteEvidence;
+  readonly selection: ProjectSelection;
   readonly intent: () => IntentInput;
 }
 
@@ -50,9 +55,11 @@ export class ControlCenter implements vscode.Disposable {
   refresh(): void {
     const panel = this.panel;
     if (!panel) return;
-    const { store, remote, intent } = this.sources;
+    const { store, remote, intent, selection } = this.sources;
     const settings = readSettings();
+    const scope = selection.current;
     const model = buildViewModel({
+      project: { kind: scope?.kind ?? 'none', label: scopeLabel(scope) },
       files: store.entries.map((e) => e.file),
       scanned: store.scanned,
       trusted: vscode.workspace.isTrusted,

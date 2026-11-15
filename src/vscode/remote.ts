@@ -26,8 +26,20 @@ export class RemoteEvidence implements vscode.Disposable {
   private connected = false;
   private readonly subscription: vscode.Disposable;
 
-  constructor(private readonly secrets: vscode.SecretStorage, private readonly log: Logger) {
+  /** `repoFolder` yields the workspace folder of the selected project (where `.git` lives), if any. */
+  constructor(
+    private readonly secrets: vscode.SecretStorage,
+    private readonly log: Logger,
+    private readonly repoFolder: () => vscode.Uri | undefined,
+  ) {
     this.subscription = secrets.onDidChange((e) => { if (e.key === TOKEN_KEY) void this.refreshConnection(); });
+  }
+
+  /** Forgets fetched runs: they belong to the previously selected repository and must not appear under another project. */
+  reset(): void {
+    if (this.current === undefined) return;
+    this.current = undefined;
+    this.emitter.fire();
   }
 
   get context(): RemoteContext | undefined { return this.current; }
@@ -100,10 +112,10 @@ export class RemoteEvidence implements vscode.Disposable {
   }
 
   private async guessRepo(): Promise<string> {
-    const folder = vscode.workspace.workspaceFolders?.[0];
+    const folder = this.repoFolder();
     if (!folder) return '';
     try {
-      const uri = vscode.Uri.joinPath(folder.uri, '.git', 'config');
+      const uri = vscode.Uri.joinPath(folder, '.git', 'config');
       if ((await vscode.workspace.fs.stat(uri)).size > MAX_GIT_CONFIG_BYTES) return '';
       const remote = parseGitHubRemote(new TextDecoder('utf-8').decode(await vscode.workspace.fs.readFile(uri)));
       return remote ? `${remote.owner}/${remote.repo}` : '';

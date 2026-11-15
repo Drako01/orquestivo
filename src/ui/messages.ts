@@ -12,7 +12,7 @@ export type WebviewMessage =
   | { readonly type: 'explainFinding'; readonly file: number; readonly index: number }
   | { readonly type: 'command'; readonly command: WebviewCommand };
 
-export const WEBVIEW_COMMANDS = ['analyze', 'generate', 'connectGitHub', 'disconnectGitHub', 'fetchRuns'] as const;
+export const WEBVIEW_COMMANDS = ['analyze', 'generate', 'selectProject', 'openFolder', 'connectGitHub', 'disconnectGitHub', 'fetchRuns'] as const;
 export type WebviewCommand = typeof WEBVIEW_COMMANDS[number];
 
 const MAX_INDEX = 100_000;

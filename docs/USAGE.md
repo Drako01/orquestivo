@@ -1,6 +1,6 @@
 # Usage guide
 
-Orquestivo is an unreleased preview; install it from a locally built VSIX ([README](../README.md#quick-start)). Everything below assumes a **trusted** workspace. Command names follow the planned surface; if a title differs in your build, search "Orquestivo" in the Command Palette and check `contributes.commands` in `package.json`.
+Orquestivo is a pre-1.0 release (see the [changelog](../CHANGELOG.md) for the current version); install it from the Marketplace/Open VSX or a locally built VSIX ([README](../README.md#quick-start)). Everything below assumes a **trusted** workspace. Command names follow the planned surface; if a title differs in your build, search "Orquestivo" in the Command Palette and check `contributes.commands` in `package.json`.
 
 ## 1. Analyze your pipelines
 
@@ -73,7 +73,7 @@ Logs are not downloaded. See [../PRIVACY.md](../PRIVACY.md).
 1. Run **Orquestivo: Generate CI** (`orquestivo.generateCI`).
 2. Pick a preset: `node`, `typescript`, `react`, `next`, `go`, `python`, `java-maven`, `java-gradle`, `php` or `docker`. The wizard shows which marker files were detected and which parts need real execution.
 3. Choose options (triggers, package manager, matrix, lint/build/test, cache, security scan, artifacts, deploy). Options a preset does not support are rejected.
-4. Review the **diff preview**. Nothing is written until you confirm, and existing files are never overwritten.
+4. Review the **diff preview**. Nothing is written until you confirm. If the target file already exists, overwriting it needs a separate, explicit confirmation showing the diff; the last generation can be undone.
 5. To revert, run **Orquestivo: Undo last generation** (`orquestivo.undoLastGeneration`).
 
 Generated workflows use SHA-pinned actions, least-privilege permissions, job timeouts and concurrency. Some options need a verified commit SHA you provide; otherwise the wizard refuses rather than guessing. The deploy template is a placeholder that fails until you replace it. Details: [GENERATOR.md](GENERATOR.md).

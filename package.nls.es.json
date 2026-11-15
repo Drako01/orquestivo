@@ -8,6 +8,7 @@
   "walkthrough.analyze.title": "Analizar workflows",
   "walkthrough.analyze.description": "Abrí un espacio de trabajo confiable y ejecutá **Orquestivo: Analizar pipelines de CI/CD**.",
   "command.generate": "Generar workflow CI seguro",
+  "command.selectProject": "Elegir proyecto a analizar",
   "command.undo": "Deshacer último workflow generado",
   "command.connect": "Conectar GitHub (evidencia remota)",
   "command.disconnect": "Desconectar GitHub",

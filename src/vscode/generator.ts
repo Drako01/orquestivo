@@ -89,13 +89,15 @@ export class GeneratorWizard {
     private readonly log: Logger,
     /** Called after the workspace changed (write or undo) so views can rescan. */
     private readonly onChanged: () => Promise<void>,
+    /** Workspace folder of the selected project; the wizard defaults to it instead of asking again. */
+    private readonly selectedFolder: () => vscode.WorkspaceFolder | undefined = () => undefined,
   ) {}
 
   async generate(): Promise<void> {
     if (!vscode.workspace.isTrusted) { await vscode.window.showWarningMessage(t('untrusted')); return; }
     const folders = vscode.workspace.workspaceFolders;
     if (!folders?.length) { await vscode.window.showWarningMessage(t('noFolder')); return; }
-    const folder = folders.length === 1 ? folders[0] : await vscode.window.showWorkspaceFolderPick();
+    const folder = folders.length === 1 ? folders[0] : this.selectedFolder() ?? await vscode.window.showWorkspaceFolderPick();
     if (!folder) return;
 
     const detection = await this.detect(folder.uri);

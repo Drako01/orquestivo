@@ -10,6 +10,17 @@ Format follows Keep a Changelog; versions follow SemVer.
 
 ## [Unreleased]
 
+### Added
+- Control Center: project selector ("Change project", command `orquestivo.selectProject`), remembered per workspace; supports multi-root, monorepo sub-projects and an explicit "entire workspace" scope. Scanning, intent contract, GitHub repo guess and the CI generator default now follow the selected project; results of a previous project are discarded on change.
+- "Analyze existing CI/CD" is the primary action and "Create new CI" the alternative; honest review status (needs attention / partial / no problems detected by the available rules / no CI / not evaluated) and a prioritised, de-duplicated improvement plan (manual guidance only).
+- Pure `core/project` and `core/recommendations` modules with unit tests.
+
+### Changed
+- `docs/USAGE.md` no longer claims an unreleased preview or that files are never overwritten.
+
+### Not yet implemented
+- Applying an existing-workflow fix with diff, confirmation and undo (phase 4) is **not** included; the plan is guidance only. See `docs/UPGRADE_ORQUESTIVO_UX_CICD_CHECKLIST.md`.
+
 _Nothing yet._
 
 ## [0.2.0] — 2026-11-10

@@ -74,6 +74,12 @@
         "icon": "$(add)"
       },
       {
+        "command": "orquestivo.selectProject",
+        "title": "%command.selectProject%",
+        "category": "Orquestivo",
+        "icon": "$(root-folder)"
+      },
+      {
         "command": "orquestivo.undoLastGeneration",
         "title": "%command.undo%",
         "category": "Orquestivo"

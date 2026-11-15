@@ -6,11 +6,10 @@ import { t } from './runtime.js';
 
 const MAX_INTENT_BYTES = 256 * 1024;
 
-/** Reads and validates `.orquestivo/intent.json` from the first workspace folder (bounded read). */
-export async function loadIntent(log: Logger): Promise<IntentInput> {
-  const folder = vscode.workspace.workspaceFolders?.[0];
-  if (!folder || !vscode.workspace.isTrusted) return { status: 'absent' };
-  const uri = vscode.Uri.joinPath(folder.uri, ...INTENT_CONTRACT_PATH.split('/'));
+/** Reads and validates `.orquestivo/intent.json` from the selected project root (bounded read); absent without one. */
+export async function loadIntent(log: Logger, projectRoot: vscode.Uri | undefined): Promise<IntentInput> {
+  if (!projectRoot || !vscode.workspace.isTrusted) return { status: 'absent' };
+  const uri = vscode.Uri.joinPath(projectRoot,...INTENT_CONTRACT_PATH.split('/'));
   try {
     const stat = await vscode.workspace.fs.stat(uri);
     if (stat.size > MAX_INTENT_BYTES) return { status: 'invalid', issues: [{ path: '$', message: t('intentTooLarge') }] };

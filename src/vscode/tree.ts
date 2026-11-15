@@ -9,6 +9,7 @@ export const COMMANDS = {
   openHome: 'orquestivo.openHome',
   analyze: 'orquestivo.analyze',
   generate: 'orquestivo.generateCI',
+  selectProject: 'orquestivo.selectProject',
   openFinding: 'orquestivo.openFinding',
   connectGitHub: 'orquestivo.connectGitHub',
   disconnectGitHub: 'orquestivo.disconnectGitHub',

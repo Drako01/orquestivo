@@ -20,6 +20,13 @@ export class ScanStore implements vscode.Disposable {
     this.emitter.fire();
   }
 
+  /** Drops the results (e.g. when the selected project changes) so nothing stale is shown. */
+  clear(): void {
+    if (!this.outcome) return;
+    this.outcome = undefined;
+    this.emitter.fire();
+  }
+
   entryById(id: number): ScanEntry | undefined { return this.entries.find((e) => e.file.id === id); }
 
   entryByUri(uri: vscode.Uri): ScanEntry | undefined {

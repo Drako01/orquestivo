@@ -21,7 +21,7 @@ export interface ScanOutcome {
   readonly limit: number;
 }
 
-const EXCLUDE = '**/{node_modules,.git}/**';
+export const SCAN_EXCLUDE = '**/{node_modules,.git}/**';
 
 /** One brace glob covering every provider's discovery patterns. */
 export function discoveryGlob(): string {
@@ -79,9 +79,19 @@ async function analyzeUri(uri: vscode.Uri, id: number, settings: Settings, log: 
   }
 }
 
-/** Discovers and analyses CI files of every provider. Returns undefined when cancelled. */
-export async function scanWorkspace(settings: Settings, token: vscode.CancellationToken, log: Logger): Promise<ScanOutcome | undefined> {
-  const found = await vscode.workspace.findFiles(discoveryGlob(), EXCLUDE, settings.maxFiles + 1, token);
+/**
+ * Discovers and analyses CI files of every provider inside `roots` only; the file limit applies
+ * within that scope, before the cut. Returns undefined when cancelled.
+ */
+export async function scanWorkspace(
+  roots: readonly vscode.Uri[], settings: Settings, token: vscode.CancellationToken, log: Logger,
+): Promise<ScanOutcome | undefined> {
+  const found: vscode.Uri[] = [];
+  for (const root of roots) {
+    if (found.length > settings.maxFiles) break;
+    found.push(...await vscode.workspace.findFiles(
+      new vscode.RelativePattern(root, discoveryGlob()), SCAN_EXCLUDE, settings.maxFiles + 1 - found.length, token));
+  }
   if (token.isCancellationRequested) return undefined;
   const uris = found.filter((uri) => detectProvider(relativePath(uri)) !== undefined)
     .sort((a, b) => relativePath(a).localeCompare(relativePath(b)))
